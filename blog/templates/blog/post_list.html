@@ -2,7 +2,17 @@
 {% block title %}Blog — Denis Lokwo{% endblock %}
 {% block content %}
 <section class="blog-list container">
-    <h2>Blog</h2>
+    <header class="contact-hero" style="margin-bottom:16px;">
+        <span class="eyebrow">Insights & Updates</span>
+        <h2 class="title" style="margin:4px 0 8px">Blog</h2>
+        <p class="lead">Articles, tutorials, and notes on building modern web apps.</p>
+    </header>
+
+    <form method="get" class="project-filter" style="margin:0 0 24px;display:flex;gap:12px;flex-wrap:wrap">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search articles..." style="padding:10px 12px;border-radius:10px;border:1px solid var(--border);min-width:220px;flex:1">
+        <button type="submit" class="btn secondary">Search</button>
+    </form>
+
     {% for post in posts %}
         <article class="blog-post">
             <h3><a href="{{ post.get_absolute_url }}">{{ post.title }}</a></h3>
@@ -12,5 +22,17 @@
     {% empty %}
         <p>No blog posts found.</p>
     {% endfor %}
+
+    {% if page_obj %}
+    <nav aria-label="Pagination" style="display:flex;gap:10px;justify-content:flex-end;align-items:center">
+        {% if page_obj.has_previous %}
+            <a class="btn secondary" href="?q={{ q }}&page={{ page_obj.previous_page_number }}">← Newer</a>
+        {% endif %}
+        <span style="color:var(--muted)">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a class="btn secondary" href="?q={{ q }}&page={{ page_obj.next_page_number }}">Older →</a>
+        {% endif %}
+    </nav>
+    {% endif %}
 </section>
 {% endblock %}

@@ -67,6 +67,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'portfolio.context_processors.analytics',
             ],
         },
     },
@@ -121,6 +122,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Development email backend: prints emails to the console
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
@@ -149,3 +152,7 @@ RECAPTCHA_SITE_KEY = os.environ.get('RECAPTCHA_SITE_KEY')
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Analytics (Google Analytics 4)
+GA_MEASUREMENT_ID = os.environ.get('GA_MEASUREMENT_ID')
+CALENDLY_URL = os.environ.get('CALENDLY_URL', '')

@@ -7,6 +7,8 @@
 	{% load static %}
 	<link rel="stylesheet" href="{% static 'css/styles.css' %}">
 	{% block extra_css %}{% endblock %}
+
+			{# Analytics loaded dynamically after consent; see footer script #}
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -23,7 +25,13 @@
 					<a href="/blog/">Blog</a>
 					<a href="/contact/">Contact</a>
 				</nav>
-				<button class="nav-toggle" aria-expanded="false" aria-label="Toggle navigation">☰</button>
+				<div style="display:flex;align-items:center;gap:10px;">
+					<button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode" aria-pressed="false" title="Toggle theme">
+						<span class="sun" aria-hidden="true">☀️</span>
+						<span class="moon" aria-hidden="true">🌙</span>
+					</button>
+					<button class="nav-toggle" aria-expanded="false" aria-label="Toggle navigation">☰</button>
+				</div>
 		</div>
 	</header>
 
@@ -35,27 +43,27 @@
 		<div class="container footer-inner">
 			<small>© {% now "Y" %} Denis Lokwo — Built with Django</small>
 			<nav class="footer-nav">
+				<a href="{% url 'portfolio:portfolio_pdf' %}">Download PDF</a>
 				<a href="#">Privacy</a>
 				<a href="#">Terms</a>
 			</nav>
 		</div>
 	</footer>
 
+	{# Cookie consent banner #}
+	<div id="cookie-consent" class="cookie-banner" role="dialog" aria-live="polite" aria-label="Cookie consent" hidden>
+		<div class="container" style="display:flex;align-items:center;gap:14px;justify-content:space-between;flex-wrap:wrap">
+			<p style="margin:0;flex:1;min-width:220px;color:var(--muted)">
+				We use cookies for analytics to improve your experience. You can opt in or continue without analytics.
+			</p>
+			<div style="display:flex;gap:10px">
+				<button id="cookie-decline" class="btn secondary">Decline</button>
+				<button id="cookie-accept" class="btn">Accept</button>
+			</div>
+		</div>
+	</div>
+
 	<script src="{% static 'js/main.js' %}"></script>
-	<!-- Add mobile nav JS and improve accessibility -->
-	<script>
-document.addEventListener('DOMContentLoaded', function() {
-	const navToggle = document.querySelector('.nav-toggle');
-	const siteNav = document.querySelector('.site-nav');
-	if(navToggle && siteNav) {
-		navToggle.addEventListener('click', function() {
-			const expanded = navToggle.getAttribute('aria-expanded') === 'true';
-			navToggle.setAttribute('aria-expanded', !expanded);
-			siteNav.classList.toggle('open');
-		});
-	}
-});
-	</script>
 	<!-- Fade-in animation for navigation and footer -->
 	<script>
 window.addEventListener('DOMContentLoaded', function() {
@@ -80,6 +88,58 @@ window.addEventListener('DOMContentLoaded', function() {
 	<style>
 nav, footer { transition: opacity 0.8s; }
 	</style>
+
+	<script>
+	// Cookie consent + conditional GA loader
+	(function(){
+		const GA_ID = '{{ GA_MEASUREMENT_ID|default:"" }}';
+		function loadGA(){
+			if(!GA_ID) return;
+			if(window.gtag) return; // already loaded
+			const s = document.createElement('script');
+			s.async = true;
+			s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+			document.head.appendChild(s);
+			window.dataLayer = window.dataLayer || [];
+			window.gtag = function(){ dataLayer.push(arguments); };
+			gtag('js', new Date());
+			gtag('config', GA_ID);
+		}
+		function showBanner(){
+			const el = document.getElementById('cookie-consent');
+			if(el) el.hidden = false;
+		}
+		function hideBanner(){
+			const el = document.getElementById('cookie-consent');
+			if(el) el.hidden = true;
+		}
+		document.addEventListener('DOMContentLoaded', function(){
+			const consent = localStorage.getItem('analytics_consent');
+			if(consent === 'granted'){
+				loadGA();
+			} else if(consent === 'denied'){
+				// Do nothing
+			} else {
+				showBanner();
+			}
+			const acceptBtn = document.getElementById('cookie-accept');
+			const declineBtn = document.getElementById('cookie-decline');
+			if(acceptBtn){
+				acceptBtn.addEventListener('click', function(){
+					localStorage.setItem('analytics_consent','granted');
+					loadGA();
+					hideBanner();
+				});
+			}
+			if(declineBtn){
+				declineBtn.addEventListener('click', function(){
+					localStorage.setItem('analytics_consent','denied');
+					hideBanner();
+				});
+			}
+		});
+	})();
+	</script>
 	{% block extra_js %}{% endblock %}
 </body>
 </html>

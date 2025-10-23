@@ -2,9 +2,17 @@
 {% block title %}{{ post.title }} — Blog{% endblock %}
 {% block content %}
 <article class="blog-post container">
-    <h2>{{ post.title }}</h2>
-    <p class="meta">By {{ post.author }} on {{ post.created_at|date:"F j, Y" }}</p>
+    <header style="margin-bottom:12px">
+        <span class="eyebrow">Article</span>
+        <h1 class="title" style="margin:6px 0 8px">{{ post.title }}</h1>
+        <p class="meta">By {{ post.author }} • {{ post.created_at|date:"F j, Y" }} • {{ reading_time }} min read</p>
+    </header>
     <div class="content">{{ post.content|linebreaks }}</div>
-    <a href="/blog/">← Back to Blog</a>
+    <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
+    <nav style="display:flex;justify-content:space-between;gap:10px">
+        {% if newer %}<a class="btn secondary" href="{{ newer.get_absolute_url }}">← Newer</a>{% else %}<span></span>{% endif %}
+        <a class="btn secondary" href="/blog/">Back to Blog</a>
+        {% if older %}<a class="btn secondary" href="{{ older.get_absolute_url }}">Older →</a>{% else %}<span></span>{% endif %}
+    </nav>
 </article>
 {% endblock %}

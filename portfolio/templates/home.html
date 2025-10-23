@@ -12,10 +12,11 @@
 			<h1 class="title fade-up stagger-2">Hi, I'm Denis — I build delightful web apps for the modern web.</h1>
 			<p class="lead fade-up stagger-3">I'm a full-stack developer focused on performance, accessibility, and clean UX. I enjoy turning ideas into production-quality code and mentoring junior engineers.</p>
 
-			<div class="cta-row fade-up stagger-3">
+            <div class="cta-row fade-up stagger-3">
 				<a class="btn" href="#projects">View Projects</a>
-				<a class="btn secondary" href="#contact">Get in touch</a>
+                <a class="btn secondary" href="/contact/">Get in touch</a>
                 <a class="btn secondary" href="{% static 'resume/Denis_Lokwo_Resume.pdf' %}" download>Download CV</a>
+				<a class="btn" href="{% url 'portfolio:portfolio_pdf' %}">Download Portfolio PDF</a>
 				<span class="type-wrap" aria-hidden="true"><span data-roles="React Developer|Django Developer|Open Source Contributor" class="stagger-1"></span></span>
 			</div>
 		</div>
@@ -66,33 +67,7 @@
 		</div>
 	</section>
 
-	<!-- Contact section improvement -->
-<section id="contact" class="container" style="padding:50px 0;max-width:600px;margin:0 auto;">
-    <h2>Contact Me</h2>
-    <form action="{% url 'portfolio:contact' %}" method="post" novalidate style="display:flex;flex-direction:column;gap:18px;">
-        {% csrf_token %}
-        {% for field in form.visible_fields %}
-            <div>
-                <label for="{{ field.id_for_label }}" style="font-weight:600;">{{ field.label }}</label>
-                {{ field }}
-                {% if field.errors %}
-                    <div style="color:#ef4444;font-size:0.95rem;margin-top:4px;">{{ field.errors|striptags }}</div>
-                {% endif %}
-            </div>
-        {% endfor %}
-        <button type="submit" class="btn">Send Message</button>
-    </form>
-    {% if messages %}
-        <div aria-live="polite" style="margin-top:18px;">
-            {% for message in messages %}
-                <div style="color:#22c55e;font-weight:600;">{{ message }}</div>
-            {% endfor %}
-        </div>
-    {% endif %}
-    <div style="margin-top:32px;">
-        <a href="https://wa.me/1234567890" class="btn secondary" target="_blank">Contact via WhatsApp</a>
-    </div>
-</section>
+<!-- Contact section removed: dedicated /contact/ page is now the primary contact entry point -->
 
 	<!-- Blog preview section -->
 <section class="blog-list container" style="margin-top:48px;">
@@ -108,154 +83,14 @@
         {% endfor %}
         <a class="btn secondary" href="/blog/">View all blog posts</a>
     {% else %}
-        <p>No blog posts found.</p>
+        <p class="muted">No blog posts yet. Stay tuned.</p>
     {% endif %}
     {% endwith %}
 </section>
 
-	<!-- Projects preview section -->
-<section class="container" style="margin-top:48px;">
-    <h2>Featured Projects</h2>
-    {% with projects=projects|default:None %}
-    {% if projects %}
-        {% for project in projects|slice:":3" %}
-            <div class="profile-card project-card" style="background:var(--card);border-radius:14px;padding:24px 28px;margin-bottom:32px;box-shadow:0 2px 12px rgba(2,6,23,0.12);">
-                <h3>{{ project.title }}</h3>
-                <p class="meta">{{ project.category }} | {{ project.date|date:"F Y" }}</p>
-                <p>{{ project.description|truncatewords:30 }}</p>
-                <p><strong>Technologies:</strong> {{ project.technologies }}</p>
-                {% if project.url %}<a href="{{ project.url }}" class="btn secondary" target="_blank">View Project</a>{% endif %}
-            </div>
-        {% endfor %}
-        <a class="btn secondary" href="/projects/">View all projects</a>
-    {% else %}
-        <p>No projects found.</p>
-    {% endif %}
-    {% endwith %}
-</section>
+{% block extra_js %}
+<script src="{% static 'js/home.js' %}"></script>
+{% endblock %}
 
-	<!-- Testimonials section with images and animation -->
-<section class="container" style="margin:48px auto;max-width:900px;">
-    <h2>Testimonials</h2>
-    <div class="testimonials-list" style="display:flex;gap:24px;flex-wrap:wrap;">
-        {% for t in testimonials %}
-            <div class="profile-card testimonial-card fade-up" style="flex:1;min-width:260px;transition:transform 0.3s, box-shadow 0.3s;">
-                <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
-                    {% if t.image %}
-                        <img src="{{ t.image.url }}" alt="{{ t.name }}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;box-shadow:0 2px 12px rgba(2,6,23,0.12);">
-                    {% else %}
-                        <img src="{% static 'images/avatar.svg' %}" alt="{{ t.name }}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;opacity:0.7;">
-                    {% endif %}
-                    <div>
-                        <div style="font-weight:600;">{{ t.name }}</div>
-                        {% if t.role %}<div style="color:var(--muted);font-size:0.95rem;">{{ t.role }}</div>{% endif %}
-                    </div>
-                </div>
-                <blockquote style="font-size:1.08rem;color:var(--muted);margin:0 0 12px 0;">“{{ t.content }}”</blockquote>
-            </div>
-        {% empty %}
-            <p>No testimonials yet.</p>
-        {% endfor %}
-    </div>
-</section>
-<section class="container" style="margin:48px auto;max-width:900px;">
-    <h2>Download My Resume</h2>
-    <a href="{% static 'resume/Denis_Lokwo_Resume.pdf' %}" class="btn" download style="font-size:1.1rem;margin-top:12px;">
-        <svg style="vertical-align:middle;margin-right:8px;" width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 0 1 2 0v8h3l-4 4-4-4h3V2z"/><path d="M3 16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2a1 1 0 1 0-2 0v2H5v-2a1 1 0 1 0-2 0v2z"/></svg>
-        Download PDF
-    </a>
-</section>
-<script>
-// Simple fade-up animation for testimonials
-window.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.testimonial-card').forEach(function(card, i) {
-        card.style.opacity = 0;
-        card.style.transform = 'translateY(30px)';
-        setTimeout(function() {
-            card.style.transition = 'opacity 0.6s, transform 0.6s';
-            card.style.opacity = 1;
-            card.style.transform = 'translateY(0)';
-        }, 200 + i * 200);
-    });
-});
-
-// Animate blog, projects, and testimonials sections on scroll
-function animateOnScroll(selector, animation) {
-    const elements = document.querySelectorAll(selector);
-    function check() {
-        elements.forEach(el => {
-            const rect = el.getBoundingClientRect();
-            if (rect.top < window.innerHeight - 60) {
-                el.classList.add(animation);
-            }
-        });
-    }
-    window.addEventListener('scroll', check);
-    check();
-}
-window.addEventListener('DOMContentLoaded', function() {
-    animateOnScroll('.blog-card', 'fade-in');
-    animateOnScroll('.project-card', 'slide-up');
-    animateOnScroll('.testimonial-card', 'fade-up');
-});
-
-// Random animation effects for homepage cards
-const blogEffects = ['fade-in', 'slide-up', 'zoom-in'];
-const projectEffects = ['slide-up', 'fade-in', 'flip-in'];
-const testimonialEffects = ['fade-up', 'zoom-in', 'rotate-in'];
-function randomEffect(effects) {
-    return effects[Math.floor(Math.random() * effects.length)];
-}
-function animateRandomOnScroll(selector, effects) {
-    const elements = document.querySelectorAll(selector);
-    elements.forEach((el, i) => {
-        const effect = randomEffect(effects);
-        el.classList.add('pre-anim');
-        el.setAttribute('data-effect', effect);
-    });
-    function check() {
-        elements.forEach(el => {
-            const rect = el.getBoundingClientRect();
-            if (rect.top < window.innerHeight - 60) {
-                el.classList.add(el.getAttribute('data-effect'));
-            }
-        });
-    }
-    window.addEventListener('scroll', check);
-    check();
-}
-window.addEventListener('DOMContentLoaded', function() {
-    animateRandomOnScroll('.blog-card', blogEffects);
-    animateRandomOnScroll('.project-card', projectEffects);
-    animateRandomOnScroll('.testimonial-card', testimonialEffects);
-});
-</script>
-<style>
-.pre-anim { opacity: 0; transform: translateY(30px); }
-.fade-in { opacity: 1 !important; transform: none !important; transition: opacity 0.7s, transform 0.7s; }
-.blog-card { opacity: 0; transform: translateY(30px); }
-.slide-up { opacity: 1 !important; transform: translateY(0) !important; transition: opacity 0.7s, transform 0.7s; }
-.project-card { opacity: 0; transform: translateY(40px); }
-.zoom-in { opacity: 1 !important; transform: scale(1) !important; transition: opacity 0.7s, transform 0.7s; }
-.flip-in { opacity: 1 !important; transform: rotateY(0deg) !important; transition: opacity 0.7s, transform 0.7s; }
-.rotate-in { opacity: 1 !important; transform: rotate(0deg) !important; transition: opacity 0.7s, transform 0.7s; }
-.testimonial-card.rotate-in { transform: rotate(-8deg); }
-.project-card.flip-in { transform: rotateY(90deg); }
-.blog-card.zoom-in, .testimonial-card.zoom-in { transform: scale(0.8); }
-.blog-card:hover, .project-card:hover, .testimonial-card:hover {
-    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-    transform: scale(1.04) rotate(-1deg);
-    z-index: 2;
-    transition: box-shadow 0.3s, transform 0.3s;
-}
-.blog-card[data-effect="flip-in"]:hover {
-    transform: scale(1.04) rotateY(8deg);
-}
-.project-card[data-effect="flip-in"]:hover {
-    transform: scale(1.04) rotateY(-8deg);
-}
-.testimonial-card[data-effect="rotate-in"]:hover {
-    transform: scale(1.04) rotate(8deg);
-}
-</style>
+{% block extra_css %}{% endblock %}
 {% endblock %}

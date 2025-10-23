@@ -29,7 +29,7 @@
                 </li>
                 <li>
                     <span class="icon" aria-hidden="true">💬</span>
-                    <a href="https://wa.me/1234567890" target="_blank" rel="noopener">WhatsApp</a>
+                    <a href="https://wa.me/1234567890?text={{ 'Hello Denis, I would like to discuss a project.'|urlencode }}" target="_blank" rel="noopener">WhatsApp</a>
                 </li>
                 <li>
                     <span class="icon" aria-hidden="true">📍</span>
@@ -51,12 +51,15 @@
                 </div>
             {% endif %}
 
-            <form method="post" class="contact-form" novalidate>
+                        <form method="post" class="contact-form" novalidate enctype="multipart/form-data" aria-label="Contact form">
                 {% csrf_token %}
                 <div class="form-grid">
                     {% for field in form.visible_fields %}
                         <div class="form-field{% if field.errors %} has-error{% endif %}">
-                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            <label for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                                {% if field.field.required %}<span class="req" aria-hidden="true">*</span>{% endif %}
+                            </label>
                             {{ field }}
                             {% if field.help_text %}<small class="help">{{ field.help_text }}</small>{% endif %}
                             {% if field.errors %}
@@ -65,40 +68,38 @@
                         </div>
                     {% endfor %}
                 </div>
-                <div class="actions">
-                    <button type="submit" class="btn">Send Message</button>
-                    <a class="btn secondary" href="mailto:denis@email.com">Email directly</a>
-                </div>
+                                <div class="actions">
+                                        <button type="submit" class="btn">Send Message</button>
+                                        <a class="btn secondary" href="mailto:denis@email.com">Email directly</a>
+                                </div>
             </form>
         </section>
     </div>
 </section>
+{% if CALENDLY_URL %}
+<section class="container" style="margin:24px auto;">
+    <div class="contact-card" aria-label="Booking widget">
+        <h3 style="margin-top:0;margin-bottom:10px">Book a call</h3>
+        <div class="booking-wrapper">
+            <div class="calendly-inline-widget booking-embed" data-url="{{ CALENDLY_URL }}"></div>
+            <div class="embed-skeleton" aria-hidden="true">Loading scheduler…</div>
+        </div>
+        <p class="help" style="margin-top:8px">If the embed doesn’t load, open <a href="{{ CALENDLY_URL }}" target="_blank" rel="noopener">Calendly</a> in a new tab.</p>
+    </div>
+</section>
+{% else %}
+<section class="container" style="margin:24px auto;">
+    <div class="contact-card" aria-label="Booking widget (not configured)">
+        <h3 style="margin-top:0;margin-bottom:10px">Book a call</h3>
+        <p class="help">Booking is not configured yet. Set CALENDLY_URL in your environment to enable the inline scheduler. You can still visit <a href="https://calendly.com/" target="_blank" rel="noopener">Calendly</a>.</p>
+    </div>
+</section>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
-<script>
-// Random effect for contact form on load and subtle hover
-const contactEffects = ['fade-in', 'zoom-in', 'slide-up', 'flip-in'];
-function randomContactEffect(effects) {
-    return effects[Math.floor(Math.random() * effects.length)];
-}
-window.addEventListener('DOMContentLoaded', function() {
-    const form = document.querySelector('.contact-form');
-    if (form) {
-        const effect = randomContactEffect(contactEffects);
-        form.classList.add('pre-anim');
-        form.setAttribute('data-effect', effect);
-        requestAnimationFrame(() => form.classList.add(effect));
-        form.addEventListener('mouseenter', function() {
-            form.style.boxShadow = '0 8px 32px rgba(0,0,0,0.18)';
-            form.style.transform = 'scale(1.02)';
-            form.style.transition = 'box-shadow 0.25s, transform 0.25s';
-        });
-        form.addEventListener('mouseleave', function() {
-            form.style.boxShadow = '';
-            form.style.transform = '';
-        });
-    }
-});
-</script>
+<script src="{% static 'js/contact.js' %}"></script>
+{% if CALENDLY_URL %}
+<script type="text/javascript" src="https://assets.calendly.com/assets/external/widget.js" async></script>
+{% endif %}
 {% endblock %}

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Message, Project, Testimonial
+from .models import Message, Project, Testimonial, Tag
 from django.core.mail import send_mail
 from django.conf import settings
 from django.shortcuts import redirect
@@ -52,9 +52,15 @@ class MessageAdmin(admin.ModelAdmin):
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ('title', 'category', 'date')
-    search_fields = ('title', 'description', 'technologies', 'category')
-    list_filter = ('category', 'date')
+	list_display = ('title', 'category', 'date')
+	search_fields = ('title', 'description', 'technologies', 'category', 'tags__name')
+	list_filter = ('category', 'date', 'tags')
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+	search_fields = ('name',)
+	list_display = ('name',)
 
 
 @admin.register(Testimonial)

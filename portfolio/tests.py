@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from .models import Message
 from django.core import mail
@@ -10,7 +10,7 @@ class ContactFormTests(TestCase):
 	def test_contact_form_saves_message(self):
 		data = {'name': 'Alice', 'email': 'alice@example.com', 'message': 'Hello!', 'hp': ''}
 		resp = self.client.post(reverse('portfolio:contact'), data)
-		self.assertRedirects(resp, reverse('home'))
+		self.assertRedirects(resp, reverse('portfolio:contact'))
 		self.assertEqual(Message.objects.count(), 1)
 
 	def test_honeypot_rejected(self):
@@ -29,6 +29,7 @@ class ContactFormTests(TestCase):
 		# We'll assert that no exception occurred and message exists
 		self.assertTrue(Message.objects.filter(email='bob@example.com').exists())
 
+	@override_settings(CONTACT_RATE_LIMIT_SECONDS=1)
 	def test_rate_limiting(self):
 		data = {'name': 'Carol', 'email': 'carol@example.com', 'message': '1', 'hp': ''}
 		resp1 = self.client.post(reverse('portfolio:contact'), data)
@@ -37,7 +38,16 @@ class ContactFormTests(TestCase):
 		resp2 = self.client.post(reverse('portfolio:contact'), data)
 		self.assertEqual(Message.objects.filter(email='carol@example.com').count(), 1)
 		# wait and retry after the rate limit window
-		time.sleep(2)
+		time.sleep(1.2)
 		resp3 = self.client.post(reverse('portfolio:contact'), data)
 		self.assertEqual(Message.objects.filter(email='carol@example.com').count(), 2)
+
+class PortfolioPDFTests(TestCase):
+	def test_portfolio_pdf_endpoint(self):
+		url = reverse('portfolio:portfolio_pdf')
+		resp = self.client.get(url)
+		self.assertEqual(resp.status_code, 200)
+		self.assertEqual(resp['Content-Type'], 'application/pdf')
+		# PDF should not be empty; expect some bytes
+		self.assertGreater(len(resp.content), 100)
 

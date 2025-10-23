@@ -1,61 +1,100 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Projects — Denis Lokwo{% endblock %}
 {% block content %}
 <section class="container" style="margin-top:48px;">
-    <h2>Projects</h2>
-    <form method="get" class="project-filter" style="margin-bottom:24px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
-        <input type="text" name="search" placeholder="Search projects..." value="{{ search|default:'' }}" style="padding:8px 12px;border-radius:8px;border:1px solid #222;min-width:180px;">
-        <select name="tech" style="padding:8px 12px;border-radius:8px;border:1px solid #222;">
+    <header style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:12px;">
+        <h2 style="margin:0">Projects</h2>
+        {% if has_filters %}
+            <a class="btn secondary" href="/projects/">Clear filters</a>
+        {% endif %}
+    </header>
+
+    <form method="get" class="project-filter">
+        <input type="hidden" name="page" value="1" />
+        <input type="text" name="search" placeholder="Search projects..." value="{{ search|default:'' }}">
+        <select name="tech">
             <option value="">All Technologies</option>
             {% for t in techs %}
                 <option value="{{ t }}" {% if t == selected_tech %}selected{% endif %}>{{ t }}</option>
             {% endfor %}
         </select>
-        <select name="category" style="padding:8px 12px;border-radius:8px;border:1px solid #222;">
+        <select name="category">
             <option value="">All Categories</option>
             {% for c in categories %}
                 <option value="{{ c }}" {% if c == selected_category %}selected{% endif %}>{{ c }}</option>
             {% endfor %}
         </select>
+        <select name="sort">
+            <option value="date_desc" {% if sort == 'date_desc' %}selected{% endif %}>Newest</option>
+            <option value="date_asc" {% if sort == 'date_asc' %}selected{% endif %}>Oldest</option>
+            <option value="title_asc" {% if sort == 'title_asc' %}selected{% endif %}>Title A–Z</option>
+            <option value="title_desc" {% if sort == 'title_desc' %}selected{% endif %}>Title Z–A</option>
+        </select>
+        <select name="per">
+            {% for n in per_options %}
+                <option value="{{ n }}" {% if per == n %}selected{% endif %}>Show {{ n }}</option>
+            {% endfor %}
+        </select>
         <button type="submit" class="btn">Filter</button>
     </form>
+
+    {% if has_filters %}
+    <div class="filter-chips" aria-label="Active filters">
+        {% if selected_tech %}
+            <a class="chip selected" href="?search={{ search|urlencode }}&category={{ selected_category|urlencode }}">Tech: {{ selected_tech }} ×</a>
+        {% endif %}
+        {% if selected_category %}
+            <a class="chip selected" href="?search={{ search|urlencode }}&tech={{ selected_tech|urlencode }}">Category: {{ selected_category }} ×</a>
+        {% endif %}
+        {% if search %}
+            <a class="chip selected" href="?category={{ selected_category|urlencode }}&tech={{ selected_tech|urlencode }}">Search: “{{ search }}” ×</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
     <div class="project-list">
         {% for project in projects %}
-            <div class="project-card" style="background:var(--card);border-radius:14px;padding:24px 28px;margin-bottom:32px;box-shadow:0 2px 12px rgba(2,6,23,0.12);">
+            <div class="project-card">
                 <h3>{{ project.title }}</h3>
                 <p class="meta">{{ project.category }} | {{ project.date|date:"F Y" }}</p>
                 <p>{{ project.description|truncatewords:30 }}</p>
-                <p><strong>Technologies:</strong> {{ project.technologies }}</p>
+                {% with techs=project.tech_list %}
+                {% if techs %}
+                <div class="tech-chips">
+                    {% for t in techs %}
+                        <a class="chip" href="?tech={{ t|urlencode }}&category={{ selected_category|urlencode }}&search={{ search|urlencode }}">{{ t }}</a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
                 {% if project.url %}<a href="{{ project.url }}" class="btn secondary" target="_blank">View Project</a>{% endif %}
             </div>
         {% empty %}
             <p>No projects found.</p>
         {% endfor %}
     </div>
+
+    {% if page_obj and paginator %}
+    <nav class="pagination" aria-label="Pagination">
+        {% with q='&search='|add:search|urlencode|add:'&tech='|add:selected_tech|urlencode|add:'&category='|add:selected_category|urlencode|add:'&sort='|add:sort|urlencode|add:'&per='|add:per %}
+        {% if page_obj.has_previous %}
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{{ q }}">Previous</a>
+        {% else %}
+            <span class="page-link disabled">Previous</span>
+        {% endif %}
+        <span class="page-status">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{{ q }}">Next</a>
+        {% else %}
+            <span class="page-link disabled">Next</span>
+        {% endif %}
+        {% endwith %}
+    </nav>
+    {% endif %}
 </section>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-// Random animation for project cards and interactive hover
-const projectEffects = ['fade-in', 'slide-up', 'zoom-in', 'flip-in', 'rotate-in'];
-function randomEffect(effects) { return effects[Math.floor(Math.random() * effects.length)]; }
-window.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.project-card').forEach(function(card, i) {
-        const effect = randomEffect(projectEffects);
-        card.classList.add('pre-anim');
-        card.setAttribute('data-effect', effect);
-        setTimeout(function(){ card.classList.add(effect); }, 150 + i * 120);
-        card.addEventListener('mouseenter', function(){
-            card.style.boxShadow = '0 8px 32px rgba(0,0,0,0.18)';
-            card.style.transform = 'scale(1.03)';
-            card.style.transition = 'box-shadow 0.25s, transform 0.25s';
-        });
-        card.addEventListener('mouseleave', function(){
-            card.style.boxShadow = '';
-            card.style.transform = '';
-        });
-    });
-});
-</script>
+<script src="{% static 'js/projects.js' %}"></script>
 {% endblock %}
