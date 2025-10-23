@@ -1,5 +1,14 @@
 {% extends 'base.html' %}
+{% load static site_extras %}
 {% block title %}Blog — Denis Lokwo{% endblock %}
+{% block og_title %}Blog — Denis Lokwo{% endblock %}
+{% block tw_title %}Blog — Denis Lokwo{% endblock %}
+{% block head_meta %}
+    <meta property="og:description" content="Articles, tutorials, and notes on building modern web apps.">
+    <meta name="twitter:description" content="Articles, tutorials, and notes on building modern web apps.">
+    <meta property="og:image" content="{% absolute_static 'images/og-default.svg' %}">
+    <meta name="twitter:image" content="{% absolute_static 'images/og-default.svg' %}">
+{% endblock %}
 {% block content %}
 <section class="blog-list container">
     <header class="contact-hero" style="margin-bottom:16px;">

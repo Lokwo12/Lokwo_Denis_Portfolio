@@ -12,12 +12,21 @@
 			<h1 class="title fade-up stagger-2">Hi, I'm Denis — I build delightful web apps for the modern web.</h1>
 			<p class="lead fade-up stagger-3">I'm a full-stack developer focused on performance, accessibility, and clean UX. I enjoy turning ideas into production-quality code and mentoring junior engineers.</p>
 
+			<div class="roles-line pill fade-up stagger-3" aria-label="Rotating roles">
+				<span class="sparkle-icon" aria-hidden="true">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+						<path d="M12 2l1.7 4.6L18 8.3l-4.3 1.7L12 14l-1.7-4.1L6 8.3l4.3-1.7L12 2zm7 6l.9 2.4L22 12l-2.1 1.6L19 16l-.9-2.4L16 12l2.1-1.6L19 8zm-14 0l.9 2.4L8 12l-2.1 1.6L5 16l-.9-2.4L2 12l2.1-1.6L5 8z"/>
+					</svg>
+				</span>
+				<span class="roles-label">Focus:</span>
+				<span class="type-wrap"><span data-roles="React Developer|Django Developer|Open Source Contributor" data-speed="80" data-pause="800" data-back-pause="350"></span></span>
+			</div>
+
             <div class="cta-row fade-up stagger-3">
 				<a class="btn" href="#projects">View Projects</a>
                 <a class="btn secondary" href="/contact/">Get in touch</a>
                 <a class="btn secondary" href="{% static 'resume/Denis_Lokwo_Resume.pdf' %}" download>Download CV</a>
 				<a class="btn" href="{% url 'portfolio:portfolio_pdf' %}">Download Portfolio PDF</a>
-				<span class="type-wrap" aria-hidden="true"><span data-roles="React Developer|Django Developer|Open Source Contributor" class="stagger-1"></span></span>
 			</div>
 		</div>
 
@@ -45,27 +54,119 @@
 	</div>
 </section>
 
+{% if featured_project %}
+<section class="container" style="padding:10px 0 10px">
+	<div class="featured-project">
+		<div class="fp-content">
+			<h2 class="fp-title">Featured Project — {{ featured_project.title }}</h2>
+			<p class="meta">{{ featured_project.category|default:'General' }} • {{ featured_project.date|date:'F Y' }}</p>
+			<p class="lead">{{ featured_project.description|truncatewords:36 }}</p>
+			{% with techs=featured_project.tech_list %}
+			{% if techs %}
+			<div class="tech-chips" style="margin:8px 0 14px">
+				{% for t in techs %}<span class="chip">{{ t }}</span>{% endfor %}
+			</div>
+			{% endif %}
+			{% endwith %}
+			<div class="cta-row">
+				{% if featured_project.url %}
+				<a class="btn" href="{{ featured_project.url }}" target="_blank" rel="noopener" data-ev="project_view_live" data-project="{{ featured_project.title }}" data-url="{{ featured_project.url }}">View live</a>
+				{% endif %}
+				<a class="btn" href="{{ featured_project.get_absolute_url }}" data-ev="case_study_open" data-project="{{ featured_project.title }}" data-slug="{{ featured_project.slug }}">Read case study</a>
+				<a class="btn secondary" href="/projects/">All projects</a>
+			</div>
+		</div>
+		{% if featured_project.image %}
+		<div class="fp-media">
+			<img src="{{ featured_project.image.url }}" alt="{{ featured_project.title }} screenshot">
+		</div>
+		{% endif %}
+	</div>
+	<hr style="border:none;border-top:1px solid var(--border);margin:18px 0 0" />
+</section>
+{% endif %}
+
+	<section class="container" style="padding:10px 0 0">
+		<div class="stats-row">
+			<div class="stat">
+				<div class="stat-value">{{ stats.years }}+</div>
+				<div class="stat-label">Years Experience</div>
+			</div>
+			<div class="stat">
+				<div class="stat-value">{{ stats.projects }}</div>
+				<div class="stat-label">Projects</div>
+			</div>
+			<div class="stat">
+				<div class="stat-value">{{ stats.posts }}</div>
+				<div class="stat-label">Blog Posts</div>
+			</div>
+		</div>
+	</section>
+
 	<!-- Projects -->
 	<section id="projects" class="container" style="padding:50px 0">
 		<h2 style="margin-top:0">Selected Projects</h2>
-		<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px">
-               <article class="profile-card blog-card">
-				<h3>Project One</h3>
-				<p class="lead">A short description of a project that showcases skills in Django and React.</p>
-				<a class="btn" href="#">View</a>
+		{% if projects %}
+		<div class="cards-grid">
+			{% for p in projects %}
+			<article class="project-card" data-effect="slide-up">
+				<h3>{{ p.title }}</h3>
+				<p class="meta">{{ p.category|default:'General' }} • {{ p.date|date:'M Y' }}</p>
+				<p class="lead">{{ p.description|default:'No description provided.'|truncatewords:24 }}</p>
+				{% with techs=p.tech_list %}
+				{% if techs %}
+				<div class="tech-chips">
+					{% for t in techs %}<span class="chip">{{ t }}</span>{% endfor %}
+				</div>
+				{% endif %}
+				{% endwith %}
+				<div>
+					{% if p.url %}
+						<a class="btn" href="{{ p.url }}" target="_blank" rel="noopener">View</a>
+					{% else %}
+						<a class="btn" href="/projects/">View</a>
+					{% endif %}
+				</div>
 			</article>
-               <article class="profile-card blog-card">
-				<h3>Project Two</h3>
-				<p class="lead">A backend-heavy project with message queues and data pipelines.</p>
-				<a class="btn" href="#">View</a>
-			</article>
-               <article class="profile-card blog-card">
-				<h3>Project Three</h3>
-				<p class="lead">Open source contributions and tooling for developer experience.</p>
-				<a class="btn" href="#">View</a>
-			</article>
+			{% endfor %}
+		</div>
+		<a class="btn secondary" style="margin-top:16px" href="/projects/">Browse all projects</a>
+		{% else %}
+		<p class="muted">No projects yet.</p>
+		{% endif %}
+	</section>
+
+	{% if top_tags %}
+	<section class="container" style="padding:10px 0 30px">
+		<h3 style="margin:0 0 10px">Top Technologies</h3>
+		<div class="tech-chips">
+			{% for t in top_tags %}<span class="chip">{{ t }}</span>{% endfor %}
 		</div>
 	</section>
+	{% endif %}
+
+	<!-- Testimonials -->
+	<section class="container" style="padding:20px 0 10px">
+		{% if testimonials %}
+		<h2 style="margin-top:0">What clients say</h2>
+		<div class="cards-grid">
+			{% for t in testimonials %}
+			<article class="profile-card testimonial-card" data-effect="zoom-in">
+				{% if t.image %}<img class="contact-avatar" src="{{ t.image.url }}" alt="{{ t.name }} avatar">{% endif %}
+				<p class="lead">“{{ t.content|truncatewords:32 }}”</p>
+				<p class="meta">— {{ t.name }}{% if t.role %}, {{ t.role }}{% endif %}</p>
+			</article>
+			{% endfor %}
+		</div>
+		{% endif %}
+	</section>
+					{% if featured_post %}
+					<article class="blog-post" style="border-left:3px solid var(--accent)">
+						<h3><a href="{{ featured_post.get_absolute_url }}">📌 Featured: {{ featured_post.title }}</a></h3>
+						<p class="meta">By {{ featured_post.author }} on {{ featured_post.created_at|date:"F j, Y" }}</p>
+						<p>{{ featured_post.content|truncatewords:30 }}</p>
+					</article>
+					{% endif %}
 
 <!-- Contact section removed: dedicated /contact/ page is now the primary contact entry point -->
 
@@ -76,7 +177,7 @@
     {% if posts %}
         {% for post in posts|slice:":3" %}
             <article class="blog-post">
-                <h3><a href="/blog/{{ post.slug }}/">{{ post.title }}</a></h3>
+				 <h3><a href="{{ post.get_absolute_url }}">{{ post.title }}</a></h3>
                 <p class="meta">By {{ post.author }} on {{ post.created_at|date:"F j, Y" }}</p>
                 <p>{{ post.content|truncatewords:30 }}</p>
             </article>

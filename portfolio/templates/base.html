@@ -4,23 +4,68 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>{% block title %}Portfolio{% endblock %}</title>
-	{% load static %}
+	{% load static site_extras %}
+	{# Basic SEO #}
+	<meta name="description" content="Full‑stack developer — Django, React, and TypeScript. Building fast, accessible, and elegant web apps.">
+	<link rel="canonical" href="{{ request.build_absolute_uri|default:'' }}">
+	{# Open Graph / Twitter #}
+	<meta property="og:type" content="website">
+	<meta property="og:title" content="{% block og_title %}Portfolio{% endblock %}">
+	<meta property="og:description" content="Full‑stack developer — Django, React, and TypeScript.">
+	<meta property="og:url" content="{{ request.build_absolute_uri|default:'' }}">
+	<meta property="og:image" content="{% absolute_static 'images/og-default.svg' %}">
+	<meta name="twitter:card" content="summary_large_image">
+	<meta name="twitter:title" content="{% block tw_title %}Portfolio{% endblock %}">
+	<meta name="twitter:description" content="Full‑stack developer — Django, React, and TypeScript.">
+	<meta name="twitter:image" content="{% absolute_static 'images/og-default.svg' %}">
+	<link rel="icon" href="{% static 'images/avatar.svg' %}" type="image/svg+xml">
+	<link rel="apple-touch-icon" href="{% static 'images/avatar.svg' %}">
+	<link rel="alternate" type="application/rss+xml" title="Blog RSS" href="{% url 'blog:post_feed' %}">
 	<link rel="stylesheet" href="{% static 'css/styles.css' %}">
 	{% block extra_css %}{% endblock %}
+	<link rel="manifest" href="{% static 'site.webmanifest' %}">
+	{% block head_meta %}{% endblock %}
 
 			{# Analytics loaded dynamically after consent; see footer script #}
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 		<meta name="theme-color" content="#0f172a">
+
+	{# JSON-LD Person structured data #}
+	<script type="application/ld+json">
+{
+	"@context": "https://schema.org",
+	"@type": "Person",
+	"name": "Denis Lokwo",
+	"jobTitle": "Full‑stack Developer",
+	"url": "{{ request.build_absolute_uri|default:'' }}",
+	"email": "mailto:denis.lokwo@example.com",
+	"telephone": "+39 123 456 7890",
+	"address": {
+		"@type": "PostalAddress",
+		"addressLocality": "L’Aquila",
+		"addressRegion": "Abruzzi",
+		"addressCountry": "IT"
+	},
+	"sameAs": [
+		"https://linkedin.com/in/denislokwo",
+		"https://github.com/denislokwo",
+		"https://scholar.google.com/",
+		"https://www.researchgate.net/"
+	]
+}
+	</script>
 </head>
 <body>
+	<div id="scroll-progress" class="scroll-progress" aria-hidden="true"></div>
 		<a class="sr-only" href="#main-content">Skip to content</a>
 		<header class="site-header" role="banner">
 		<div class="container header-inner">
 				<a class="brand" href="/">Denis Lokwo</a>
 				<nav class="site-nav" role="navigation" aria-label="Primary navigation">
 					<a href="/">Home</a>
+					<a href="/about/">About</a>
 					<a href="/projects/">Projects</a>
 					<a href="/blog/">Blog</a>
 					<a href="/contact/">Contact</a>
@@ -40,12 +85,42 @@
 	</main>
 
 	<footer class="site-footer">
-		<div class="container footer-inner">
+		<div class="container footer-grid">
+			<div class="footer-col">
+				<h4 class="footer-title">Contact Me</h4>
+				<ul class="footer-list">
+					<li><strong>Name:</strong> Denis Lokwo</li>
+					<li><strong>Phone:</strong> <a href="tel:+391234567890">+39 123 456 7890</a></li>
+					<li><strong>WhatsApp:</strong> <a href="https://wa.me/391234567890" target="_blank" rel="noopener">+39 123 456 7890</a></li>
+					<li><strong>Email:</strong> <a href="mailto:denis.lokwo@example.com">denis.lokwo@example.com</a></li>
+					<li><strong>Location:</strong> L’Aquila, Abruzzi, Italy</li>
+				</ul>
+			</div>
+			<div class="footer-col">
+				<h4 class="footer-title">Quick Links</h4>
+				<ul class="footer-list">
+					<li><a href="/about/">About Me</a></li>
+					<li><a href="/projects/">Projects</a></li>
+					<li><a href="/blog/">Blog</a></li>
+					<li><a href="/contact/">Contact</a></li>
+					<li><a href="{% url 'portfolio:portfolio_pdf' %}">Download Portfolio PDF</a></li>
+				</ul>
+			</div>
+			<div class="footer-col">
+				<h4 class="footer-title">Important Links</h4>
+				<ul class="footer-list">
+					<li><a href="https://linkedin.com/in/denislokwo" target="_blank" rel="noopener">LinkedIn</a></li>
+					<li><a href="https://github.com/denislokwo" target="_blank" rel="noopener">GitHub</a></li>
+					<li><a href="https://scholar.google.com/" target="_blank" rel="noopener">Google Scholar</a></li>
+					<li><a href="https://www.researchgate.net/" target="_blank" rel="noopener">ResearchGate</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="container footer-bottom">
 			<small>© {% now "Y" %} Denis Lokwo — Built with Django</small>
 			<nav class="footer-nav">
-				<a href="{% url 'portfolio:portfolio_pdf' %}">Download PDF</a>
-				<a href="#">Privacy</a>
-				<a href="#">Terms</a>
+				<a href="/privacy/">Privacy</a>
+				<a href="/terms/">Terms</a>
 			</nav>
 		</div>
 	</footer>

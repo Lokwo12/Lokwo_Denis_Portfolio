@@ -26,9 +26,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-64idji^07q4l_qfqlyal#c%ct9i^3!8l^_x%klp+=u(q)bjxg$'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Read from env for deploys; defaults to True for local dev
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+# Allow common local hosts by default; extend via ALLOWED_HOSTS env var for deploys
+_env_hosts = [h for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h]
+ALLOWED_HOSTS = _env_hosts or ['127.0.0.1', 'localhost', 'testserver']
 
 
 # Application definition
@@ -40,12 +43,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sitemaps',
     'portfolio',
     'blog',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # WhiteNoise (static files) is enabled in production only
+    *(['whitenoise.middleware.WhiteNoiseMiddleware'] if not DEBUG else []),
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -68,7 +74,12 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'portfolio.context_processors.analytics',
+                'portfolio.context_processors.profile',
             ],
+            # Ensure custom template tag libraries are always discoverable
+            'libraries': {
+                'site_extras': 'portfolio.templatetags.site_extras',
+            },
         },
     },
 ]
@@ -122,6 +133,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
@@ -156,3 +168,72 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Analytics (Google Analytics 4)
 GA_MEASUREMENT_ID = os.environ.get('GA_MEASUREMENT_ID')
 CALENDLY_URL = os.environ.get('CALENDLY_URL', '')
+
+# Portfolio profile/config
+CAREER_START_YEAR = int(os.environ.get('CAREER_START_YEAR', 2020))
+
+# Customizable profile data used on About page and elsewhere
+PROFILE = {
+    'name': 'Denis Lokwo',
+    'title': 'Full‑stack Developer — Django, React, TypeScript',
+    'summary': "I'm a full‑stack developer passionate about building fast, accessible, and elegant web applications. I enjoy solving hard problems, mentoring, and delivering production‑ready systems.",
+    'location': 'L’Aquila, Abruzzi, Italy',
+    'email': 'denis.lokwo@example.com',
+    'phone': '+39 123 456 7890',
+    'whatsapp': '+39 123 456 7890',
+    'skills': ['Python','Django','DRF','PostgreSQL','JavaScript','TypeScript','React','Tailwind','Docker','CI/CD'],
+    'tools': ['Git','Pytest','Poetry','Celery','Redis'],
+    'languages': ['English','Italian'],
+    'interests': ['Open Source','AI','Developer Experience'],
+    'links': {
+        'linkedin': 'https://linkedin.com/in/denislokwo',
+        'github': 'https://github.com/Lokwo12',
+    },
+    'experience': [
+        {'role':'Senior Full‑stack Developer','company':'Company Name','period':'2023 — Present','summary':'Leading delivery of scalable web apps, improving performance and developer productivity, mentoring juniors, and collaborating cross‑functionally.'},
+        {'role':'Software Engineer','company':'Company Name','period':'2021 — 2023','summary':'Built APIs, dashboards, and automation for data‑heavy workflows. Focused on testing, typing, and reliable deploys.'},
+    ],
+    'education': [
+        {
+            'degree':'BSc, Computer Science',
+            'institution':'University of Example',
+            'period':'2017 — 2021',
+            'location':'L’Aquila, Italy',
+            'gpa':'3.7/4.0',
+            'honors':'Magna Cum Laude',
+            'summary':'Strong foundation in algorithms, data structures, databases, and HCI.',
+            'courses':['Algorithms','Operating Systems','Computer Networks','Databases','Human‑Computer Interaction']
+        },
+        {
+            'degree':'MSc, Software Engineering',
+            'institution':'Polytechnic Institute',
+            'period':'2021 — 2023',
+            'location':'Rome, Italy',
+            'gpa':None,
+            'honors':None,
+            'summary':'Focused on distributed systems, cloud architectures, and software quality.',
+            'courses':['Distributed Systems','Cloud Computing','Software Testing','Advanced Databases']
+        },
+    ],
+    'certifications': [],
+    'awards': [],
+}
+
+# Production static files storage (hashing + compression)
+if not DEBUG:
+    STORAGES = {
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+        # Default file storage unchanged (local)
+    }
+
+    # Basic security best-practices toggled on in production
+    SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', 0))
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False') == 'True'
+    SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False') == 'True'
+    CSRF_COOKIE_SECURE = os.environ.get('CSRF_COOKIE_SECURE', 'False') == 'True'
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = os.environ.get('SECURE_REFERRER_POLICY', 'strict-origin-when-cross-origin')
+    # Allow reverse proxy/hosts configuration via env
+    CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o]

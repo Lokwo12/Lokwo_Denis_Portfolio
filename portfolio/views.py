@@ -8,8 +8,10 @@ from django.utils import timezone
 from blog.models import Post
 from .models import Message, Project, Testimonial, Tag
 from django.db import models
+from django.db.models import Count
 from .forms import ContactForm
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.shortcuts import get_object_or_404
 
 
 def home(request):
@@ -18,7 +20,38 @@ def home(request):
 	projects = Project.objects.order_by('-date')[:3]
 	testimonials = Testimonial.objects.filter(featured=True)[:3]
 	form = ContactForm()
-	return render(request, 'home.html', {'posts': posts, 'projects': projects, 'testimonials': testimonials, 'form': form})
+	# Stats
+	from django.utils import timezone as _tz
+	current_year = _tz.now().year
+	start_year = getattr(settings, 'CAREER_START_YEAR', current_year)
+	years = max(1, current_year - int(start_year))
+	projects_count = Project.objects.count()
+	posts_count = Post.objects.filter(published=True).count()
+	# Top technologies (tags)
+	top_tags = list(Tag.objects.annotate(cnt=Count('projects')).order_by('-cnt', 'name')[:10].values_list('name', flat=True))
+	featured_post = posts[0] if posts else None
+	featured_project = Project.objects.order_by('-date').first()
+	return render(request, 'home.html', {
+		'posts': posts,
+		'projects': projects,
+		'testimonials': testimonials,
+		'form': form,
+		'stats': {
+			'years': years,
+			'projects': projects_count,
+			'posts': posts_count,
+		},
+		'top_tags': top_tags,
+		'featured_post': featured_post,
+		'featured_project': featured_project,
+	})
+
+
+def about(request):
+	"""Simple About page.
+	Uses existing styles to present a bio, skills, and highlights.
+	"""
+	return render(request, 'about.html')
 
 
 def contact(request):
@@ -67,6 +100,14 @@ def contact(request):
 	else:
 		form = ContactForm()
 	return render(request, 'contact.html', {'form': form})
+
+
+def privacy(request):
+	return render(request, 'privacy.html')
+
+
+def terms(request):
+	return render(request, 'terms.html')
 
 
 def project_list(request):
@@ -228,4 +269,18 @@ def portfolio_pdf(request):
 	c.showPage()
 	c.save()
 	return response
+
+
+def project_detail(request, slug: str):
+	project = get_object_or_404(Project, slug=slug)
+	# gather related projects via shared tags (optional small touch)
+	related = Project.objects.exclude(pk=project.pk)
+	if hasattr(project, 'tags') and project.tags.exists():
+		related = related.filter(tags__in=project.tags.all()).distinct()[:3]
+	else:
+		related = related.order_by('-date')[:3]
+	return render(request, 'project.html', {
+		'project': project,
+		'related': related,
+	})
 

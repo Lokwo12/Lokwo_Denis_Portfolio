@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Message, Project, Testimonial, Tag
+from .models import Message, Project, Testimonial, Tag, Profile, ExperienceItem, EducationItem, CertificationItem, AwardItem
 from django.core.mail import send_mail
 from django.conf import settings
 from django.shortcuts import redirect
@@ -52,9 +52,10 @@ class MessageAdmin(admin.ModelAdmin):
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-	list_display = ('title', 'category', 'date')
+	list_display = ('title', 'category', 'date', 'slug')
 	search_fields = ('title', 'description', 'technologies', 'category', 'tags__name')
 	list_filter = ('category', 'date', 'tags')
+	prepopulated_fields = { 'slug': ('title',) }
 
 
 @admin.register(Tag)
@@ -68,4 +69,60 @@ class TestimonialAdmin(admin.ModelAdmin):
     list_display = ('name', 'role', 'featured', 'created_at')
     search_fields = ('name', 'role', 'content')
     list_filter = ('featured', 'created_at')
+
+
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+	list_display = ("name", "title", "location", "updated_at")
+	search_fields = ("name", "title", "location", "email")
+	readonly_fields = ("created_at", "updated_at")
+	fieldsets = (
+		(None, {
+			'fields': ('name','title','summary','avatar')
+		}),
+		('Contact', {
+			'fields': ('location','email','phone','whatsapp')
+		}),
+		('Meta JSON', {
+			'fields': ('skills','tools','languages','interests','links'),
+			'classes': ('collapse',)
+		}),
+		('Legacy JSON (optional)', {
+			'fields': ('experience','education','certifications','awards'),
+			'classes': ('collapse',)
+		}),
+		('Timestamps', {
+			'fields': ('created_at','updated_at')
+		}),
+	)
+
+class ExperienceInline(admin.TabularInline):
+	model = ExperienceItem
+	extra = 0
+	fields = ('order','role','company','period','summary')
+	ordering = ('order', 'id')
+	show_change_link = True
+
+class EducationInline(admin.TabularInline):
+	model = EducationItem
+	extra = 0
+	fields = ('order','degree','institution','period','location','gpa','honors','summary','courses')
+	ordering = ('order', 'id')
+	show_change_link = True
+
+class CertificationInline(admin.TabularInline):
+	model = CertificationItem
+	extra = 0
+	fields = ('order','name','issuer','year')
+	ordering = ('order', 'id')
+	show_change_link = True
+
+class AwardInline(admin.TabularInline):
+	model = AwardItem
+	extra = 0
+	fields = ('order','name','issuer','year')
+	ordering = ('order', 'id')
+	show_change_link = True
+
+ProfileAdmin.inlines = [ExperienceInline, EducationInline, CertificationInline, AwardInline]
 

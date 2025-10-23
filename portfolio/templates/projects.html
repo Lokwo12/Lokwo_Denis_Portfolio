@@ -56,7 +56,7 @@
     <div class="project-list">
         {% for project in projects %}
             <div class="project-card">
-                <h3>{{ project.title }}</h3>
+                <h3><a href="{{ project.get_absolute_url }}">{{ project.title }}</a></h3>
                 <p class="meta">{{ project.category }} | {{ project.date|date:"F Y" }}</p>
                 <p>{{ project.description|truncatewords:30 }}</p>
                 {% with techs=project.tech_list %}
@@ -68,7 +68,10 @@
                 </div>
                 {% endif %}
                 {% endwith %}
-                {% if project.url %}<a href="{{ project.url }}" class="btn secondary" target="_blank">View Project</a>{% endif %}
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                    <a href="{{ project.get_absolute_url }}" class="btn" data-ev="case_study_open" data-project="{{ project.title }}" data-slug="{{ project.slug }}">Read case study</a>
+                    {% if project.url %}<a href="{{ project.url }}" class="btn secondary" target="_blank" rel="noopener" data-ev="project_view_live" data-project="{{ project.title }}" data-url="{{ project.url }}">View live</a>{% endif %}
+                </div>
             </div>
         {% empty %}
             <p>No projects found.</p>
