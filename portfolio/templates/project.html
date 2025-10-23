@@ -1,0 +1,35 @@
+<script>
+// Random animation for project cards and mouse hover
+const projectEffects = ['fade-in', 'slide-up', 'zoom-in', 'flip-in', 'rotate-in'];
+function randomEffect(effects) {
+    return effects[Math.floor(Math.random() * effects.length)];
+}
+window.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.project-card').forEach(function(card, i) {
+        var effect = randomEffect(projectEffects);
+        card.classList.add('pre-anim');
+        card.setAttribute('data-effect', effect);
+        setTimeout(function() {
+            card.classList.add(effect);
+        }, 200 + i * 150);
+        card.addEventListener('mouseenter', function() {
+            card.style.boxShadow = '0 8px 32px rgba(0,0,0,0.18)';
+            card.style.transform = 'scale(1.04) rotate(-1deg)';
+            card.style.transition = 'box-shadow 0.3s, transform 0.3s';
+        });
+        card.addEventListener('mouseleave', function() {
+            card.style.boxShadow = '';
+            card.style.transform = '';
+        });
+    });
+});
+</script>
+<style>
+.pre-anim { opacity: 0; transform: translateY(30px); }
+.fade-in { opacity: 1 !important; transform: none !important; transition: opacity 0.7s, transform 0.7s; }
+.slide-up { opacity: 1 !important; transform: translateY(0) !important; transition: opacity 0.7s, transform 0.7s; }
+.zoom-in { opacity: 1 !important; transform: scale(1) !important; transition: opacity 0.7s, transform 0.7s; }
+.flip-in { opacity: 1 !important; transform: rotateY(0deg) !important; transition: opacity 0.7s, transform 0.7s; }
+.rotate-in { opacity: 1 !important; transform: rotate(0deg) !important; transition: opacity 0.7s, transform 0.7s; }
+.project-card { transition: opacity 0.7s, transform 0.7s; }
+</style>

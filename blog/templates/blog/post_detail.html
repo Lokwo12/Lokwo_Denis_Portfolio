@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}{{ post.title }} — Blog{% endblock %}
+{% block content %}
+<article class="blog-post container">
+    <h2>{{ post.title }}</h2>
+    <p class="meta">By {{ post.author }} on {{ post.created_at|date:"F j, Y" }}</p>
+    <div class="content">{{ post.content|linebreaks }}</div>
+    <a href="/blog/">← Back to Blog</a>
+</article>
+{% endblock %}

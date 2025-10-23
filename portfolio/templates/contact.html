@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Contact — Denis Lokwo{% endblock %}
+{% block content %}
+<section class="container" style="margin:48px auto;">
+    <header class="contact-hero fade-up">
+        <span class="eyebrow">Get in touch</span>
+        <h1 class="title" style="margin-bottom:8px;">Let's build something great</h1>
+        <p class="lead">Have a question, idea, or project? Send a message and I'll reply within 24–48 hours.</p>
+    </header>
+
+    <div class="contact-layout">
+        <aside class="contact-card info-card">
+            <div class="contact-profile">
+                <img class="contact-avatar" src="{% static 'images/avatar.svg' %}" alt="Denis Lokwo" />
+                <div>
+                    <h3 class="contact-name">Denis Lokwo</h3>
+                    <p class="contact-role">Full-stack Developer</p>
+                </div>
+            </div>
+            <ul class="contact-list">
+                <li>
+                    <span class="icon" aria-hidden="true">✉️</span>
+                    <a href="mailto:denis@email.com">denis@email.com</a>
+                </li>
+                <li>
+                    <span class="icon" aria-hidden="true">📞</span>
+                    <a href="tel:+1234567890">+1 234 567 890</a>
+                </li>
+                <li>
+                    <span class="icon" aria-hidden="true">💬</span>
+                    <a href="https://wa.me/1234567890" target="_blank" rel="noopener">WhatsApp</a>
+                </li>
+                <li>
+                    <span class="icon" aria-hidden="true">📍</span>
+                    Nairobi, Kenya
+                </li>
+            </ul>
+            <div class="contact-actions">
+                <a class="btn secondary" href="{% static 'resume/Denis_Lokwo_Resume.pdf' %}" download>Download CV</a>
+                <a class="btn" href="https://github.com/Lokwo12" target="_blank" rel="noopener">GitHub</a>
+            </div>
+        </aside>
+
+        <section class="contact-card">
+            {% if messages %}
+                <div class="form-messages" aria-live="polite">
+                    {% for message in messages %}
+                        <div class="message {{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="post" class="contact-form" novalidate>
+                {% csrf_token %}
+                <div class="form-grid">
+                    {% for field in form.visible_fields %}
+                        <div class="form-field{% if field.errors %} has-error{% endif %}">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}<small class="help">{{ field.help_text }}</small>{% endif %}
+                            {% if field.errors %}
+                                <div class="field-error">{{ field.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="actions">
+                    <button type="submit" class="btn">Send Message</button>
+                    <a class="btn secondary" href="mailto:denis@email.com">Email directly</a>
+                </div>
+            </form>
+        </section>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Random effect for contact form on load and subtle hover
+const contactEffects = ['fade-in', 'zoom-in', 'slide-up', 'flip-in'];
+function randomContactEffect(effects) {
+    return effects[Math.floor(Math.random() * effects.length)];
+}
+window.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('.contact-form');
+    if (form) {
+        const effect = randomContactEffect(contactEffects);
+        form.classList.add('pre-anim');
+        form.setAttribute('data-effect', effect);
+        requestAnimationFrame(() => form.classList.add(effect));
+        form.addEventListener('mouseenter', function() {
+            form.style.boxShadow = '0 8px 32px rgba(0,0,0,0.18)';
+            form.style.transform = 'scale(1.02)';
+            form.style.transition = 'box-shadow 0.25s, transform 0.25s';
+        });
+        form.addEventListener('mouseleave', function() {
+            form.style.boxShadow = '';
+            form.style.transform = '';
+        });
+    }
+});
+</script>
+{% endblock %}

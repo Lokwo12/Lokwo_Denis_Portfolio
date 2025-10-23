@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>{% block title %}Portfolio{% endblock %}</title>
+	{% load static %}
+	<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+	{% block extra_css %}{% endblock %}
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+		<meta name="theme-color" content="#0f172a">
+</head>
+<body>
+		<a class="sr-only" href="#main-content">Skip to content</a>
+		<header class="site-header" role="banner">
+		<div class="container header-inner">
+				<a class="brand" href="/">Denis Lokwo</a>
+				<nav class="site-nav" role="navigation" aria-label="Primary navigation">
+					<a href="/">Home</a>
+					<a href="/projects/">Projects</a>
+					<a href="/blog/">Blog</a>
+					<a href="/contact/">Contact</a>
+				</nav>
+				<button class="nav-toggle" aria-expanded="false" aria-label="Toggle navigation">☰</button>
+		</div>
+	</header>
+
+	<main>
+			<div id="main-content">{% block content %}{% endblock %}</div>
+	</main>
+
+	<footer class="site-footer">
+		<div class="container footer-inner">
+			<small>© {% now "Y" %} Denis Lokwo — Built with Django</small>
+			<nav class="footer-nav">
+				<a href="#">Privacy</a>
+				<a href="#">Terms</a>
+			</nav>
+		</div>
+	</footer>
+
+	<script src="{% static 'js/main.js' %}"></script>
+	<!-- Add mobile nav JS and improve accessibility -->
+	<script>
+document.addEventListener('DOMContentLoaded', function() {
+	const navToggle = document.querySelector('.nav-toggle');
+	const siteNav = document.querySelector('.site-nav');
+	if(navToggle && siteNav) {
+		navToggle.addEventListener('click', function() {
+			const expanded = navToggle.getAttribute('aria-expanded') === 'true';
+			navToggle.setAttribute('aria-expanded', !expanded);
+			siteNav.classList.toggle('open');
+		});
+	}
+});
+	</script>
+	<!-- Fade-in animation for navigation and footer -->
+	<script>
+window.addEventListener('DOMContentLoaded', function() {
+    var nav = document.querySelector('nav');
+    var footer = document.querySelector('footer');
+    if(nav) {
+        nav.style.opacity = 0;
+        setTimeout(function() {
+            nav.style.transition = 'opacity 0.8s';
+            nav.style.opacity = 1;
+        }, 200);
+    }
+    if(footer) {
+        footer.style.opacity = 0;
+        setTimeout(function() {
+            footer.style.transition = 'opacity 0.8s';
+            footer.style.opacity = 1;
+        }, 400);
+    }
+});
+	</script>
+	<style>
+nav, footer { transition: opacity 0.8s; }
+	</style>
+	{% block extra_js %}{% endblock %}
+</body>
+</html>

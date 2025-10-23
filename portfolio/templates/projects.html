@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Projects — Denis Lokwo{% endblock %}
+{% block content %}
+<section class="container" style="margin-top:48px;">
+    <h2>Projects</h2>
+    <form method="get" class="project-filter" style="margin-bottom:24px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
+        <input type="text" name="search" placeholder="Search projects..." value="{{ search|default:'' }}" style="padding:8px 12px;border-radius:8px;border:1px solid #222;min-width:180px;">
+        <select name="tech" style="padding:8px 12px;border-radius:8px;border:1px solid #222;">
+            <option value="">All Technologies</option>
+            {% for t in techs %}
+                <option value="{{ t }}" {% if t == selected_tech %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+        </select>
+        <select name="category" style="padding:8px 12px;border-radius:8px;border:1px solid #222;">
+            <option value="">All Categories</option>
+            {% for c in categories %}
+                <option value="{{ c }}" {% if c == selected_category %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn">Filter</button>
+    </form>
+    <div class="project-list">
+        {% for project in projects %}
+            <div class="project-card" style="background:var(--card);border-radius:14px;padding:24px 28px;margin-bottom:32px;box-shadow:0 2px 12px rgba(2,6,23,0.12);">
+                <h3>{{ project.title }}</h3>
+                <p class="meta">{{ project.category }} | {{ project.date|date:"F Y" }}</p>
+                <p>{{ project.description|truncatewords:30 }}</p>
+                <p><strong>Technologies:</strong> {{ project.technologies }}</p>
+                {% if project.url %}<a href="{{ project.url }}" class="btn secondary" target="_blank">View Project</a>{% endif %}
+            </div>
+        {% empty %}
+            <p>No projects found.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Random animation for project cards and interactive hover
+const projectEffects = ['fade-in', 'slide-up', 'zoom-in', 'flip-in', 'rotate-in'];
+function randomEffect(effects) { return effects[Math.floor(Math.random() * effects.length)]; }
+window.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.project-card').forEach(function(card, i) {
+        const effect = randomEffect(projectEffects);
+        card.classList.add('pre-anim');
+        card.setAttribute('data-effect', effect);
+        setTimeout(function(){ card.classList.add(effect); }, 150 + i * 120);
+        card.addEventListener('mouseenter', function(){
+            card.style.boxShadow = '0 8px 32px rgba(0,0,0,0.18)';
+            card.style.transform = 'scale(1.03)';
+            card.style.transition = 'box-shadow 0.25s, transform 0.25s';
+        });
+        card.addEventListener('mouseleave', function(){
+            card.style.boxShadow = '';
+            card.style.transform = '';
+        });
+    });
+});
+</script>
+{% endblock %}
