@@ -1,0 +1,54 @@
+/* Minimal modern skin for Django admin, no third-party deps */
+:root{
+  --accent: #6366f1; /* indigo */
+  --bg: #0b1120;
+  --card: #0f172a;
+  --text: #e6edf3;
+  --muted: #9ba4b3;
+  --border: rgba(148,163,184,0.18);
+}
+
+html[data-theme="dark"] body,
+body.dark{ background: var(--bg) !important; color: var(--text) !important; }
+
+/* Header */
+#header{ background: linear-gradient(90deg, var(--accent), #60a5fa); color:#fff; border-bottom: none; }
+#branding h1, #branding h1 a{ color:#fff !important; text-decoration:none; }
+#user-tools{ color: rgba(255,255,255,0.9); }
+#user-tools a{ color:#fff; opacity:0.95 }
+
+/* Modules/cards */
+.module{ background: var(--card); border:1px solid var(--border); border-radius:12px; box-shadow: 0 4px 18px rgba(2,6,23,0.35); }
+.dashboard .module{ padding: 10px 12px; }
+
+/* Tables */
+.change-list table#result_list{ border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+.change-list table#result_list thead th{ background: rgba(255,255,255,0.04); color: var(--text); border-color: var(--border); }
+.change-list table#result_list tbody td{ border-color: var(--border); color: var(--text); }
+tr:nth-child(even){ background: rgba(255,255,255,0.02); }
+
+/* Forms */
+fieldset.module{ background: var(--card); border:1px solid var(--border); border-radius:12px; }
+.inline-group .module{ border-radius:12px; }
+input, select, textarea{ background: transparent; color: var(--text); border:1px solid var(--border); border-radius:8px; }
+
+/* Buttons */
+.button, input[type=submit], .deletelink, .submit-row input{ border-radius:10px; border:1px solid transparent; }
+.button.default, input.default, .submit-row input.default{ background: var(--accent); color:#fff; }
+.button:hover, input[type=submit]:hover{ filter: brightness(1.05); }
+
+/* Breadcrumbs */
+#breadcrumbs{ background: transparent; color: var(--muted); border-bottom: 1px solid var(--border); }
+#breadcrumbs a{ color: #c7d2fe; }
+
+/* Login */
+#container.login #content{ background: var(--card); border:1px solid var(--border); border-radius:12px; }
+
+/* Make it work for light theme too */
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#f8fafc; --card:#fff; --text:#0f172a; --muted:#475569; --border: rgba(15,23,42,0.12);
+  }
+  #header{ background: linear-gradient(90deg, var(--accent), #7dd3fc); }
+  tr:nth-child(even){ background: rgba(0,0,0,0.02); }
+}

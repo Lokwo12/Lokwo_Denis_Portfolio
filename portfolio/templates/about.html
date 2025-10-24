@@ -4,6 +4,7 @@
 {% block title %}About — Denis Lokwo{% endblock %}
 
 {% block content %}
+
 <section class="container resume">
   <div class="resume-header">
     <div class="rh-meta">
@@ -61,9 +62,7 @@
           <li><a href="#certifications">Certifications</a></li>
           <li><a href="#achievements">Selected Achievements</a></li>
           <li><a href="#awards">Awards</a></li>
-          {% if SITE.linkedin_url or SITE.github_url or SITE.twitter_url or SITE.youtube_url or PROFILE.links %}
-          <li><a href="#social">Social Links</a></li>
-          {% endif %}
+          {# Social links removed from sidebar TOC as requested #}
         </ul>
       </section>
       {% if PROFILE.email or PROFILE.phone or PROFILE.whatsapp or PROFILE.location %}
@@ -114,24 +113,7 @@
       </section>
       {% endif %}
 
-      {% if SITE.github_url or SITE.linkedin_url or SITE.twitter_url or SITE.youtube_url or PROFILE.links %}
-      <section class="resume-card" id="social">
-        <h3 class="resume-section-title">Social Links</h3>
-        <ul class="resume-list">
-          {% if SITE.linkedin_url %}<li><a href="{{ SITE.linkedin_url }}" target="_blank" rel="noopener">LinkedIn</a></li>{% endif %}
-          {% if SITE.github_url %}<li><a href="{{ SITE.github_url }}" target="_blank" rel="noopener">GitHub</a></li>{% endif %}
-          {% if SITE.twitter_url %}<li><a href="{{ SITE.twitter_url }}" target="_blank" rel="noopener">Twitter</a></li>{% endif %}
-          {% if SITE.youtube_url %}<li><a href="{{ SITE.youtube_url }}" target="_blank" rel="noopener">YouTube</a></li>{% endif %}
-          {% if PROFILE.links %}
-            {% for key, val in PROFILE.links.items %}
-              {% if key not in 'linkedin,github,twitter,youtube' and val %}
-              <li><a href="{{ val }}" target="_blank" rel="noopener">{{ key|title }}</a></li>
-              {% endif %}
-            {% endfor %}
-          {% endif %}
-        </ul>
-      </section>
-      {% endif %}
+      {# Social Links section removed from sidebar as requested #}
     </aside>
 
     <main class="resume-main">
@@ -335,5 +317,70 @@
       {% endif %}
     </main>
   </div>
+  <div class="container print-only" style="margin-top:10pt; font-size:10pt; color:#555;">
+    <hr style="border:none;border-top:1px solid #ddd; margin:8pt 0">
+    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <span>{{ PROFILE.name }} — {{ PROFILE.title }}</span>
+      <span>
+        {% if PROFILE.email %}Email: {{ PROFILE.email }}{% endif %}
+        {% if PROFILE.phone %}{% if PROFILE.email %} • {% endif %}Phone: {{ PROFILE.phone }}{% endif %}
+        {% if SITE.brand_name %}{% if PROFILE.email or PROFILE.phone %} • {% endif %}Site: {{ request.build_absolute_uri|cut:request.get_full_path }}{% endif %}
+      </span>
+    </div>
+    <div style="margin-top:4pt">Generated on {% now "F j, Y" %}</div>
+  </div>
+  <div class="print-footer">
+    <div class="container" style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <span>Page <span class="page-number"></span> of <span class="total-pages"></span></span>
+      <span>{{ request.build_absolute_uri|cut:request.get_full_path }}</span>
+    </div>
+  </div>
 </section>
+<section class="container" style="margin:24px auto;max-width:900px">
+  <div class="resume-card">
+    <h3 class="resume-section-title" style="margin-bottom:8px">Share your experience</h3>
+    <p class="lead" style="margin:0 0 12px">Have we worked together? I’d love to include your feedback. Your testimonial will be reviewed before it appears.</p>
+    <form method="post" action="{% url 'portfolio:recommend' %}" enctype="multipart/form-data" class="contact-form" style="margin-top:8px">
+      {% csrf_token %}
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="id_name_inline">Your Name <span class="req">*</span></label>
+          <input type="text" id="id_name_inline" name="name" required placeholder="Your name" />
+        </div>
+        <div class="form-field">
+          <label for="id_role_inline">Role / Company</label>
+          <input type="text" id="id_role_inline" name="role" placeholder="e.g. CTO, Company" />
+        </div>
+        <div class="form-field">
+          <label for="id_email_inline">Your Email <span class="req">*</span></label>
+          <input type="email" id="id_email_inline" name="email" required placeholder="you@company.com" />
+        </div>
+        <div class="form-field" style="grid-column:1/-1">
+          <label for="id_content_inline">Testimonial <span class="req">*</span></label>
+          <textarea id="id_content_inline" name="content" rows="5" required placeholder="Share your experience working with me"></textarea>
+        </div>
+        <div class="form-field">
+          <label for="id_image_inline">Photo (optional)</label>
+          <input type="file" id="id_image_inline" name="image" accept="image/*" />
+        </div>
+      </div>
+      <input type="hidden" name="hp" value="">
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <div class="actions" style="margin-top:10px">
+        <button type="submit" class="btn">Submit Recommendation</button>
+        <a href="{% url 'portfolio:recommend' %}" class="btn secondary">Open full form</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}
+{% block extra_css %}
+{{ block.super }}
+<style>
+/* Shown only when printing or generating PDF */
+@media print {
+  .print-only { display: block !important; }
+}
+.print-only { display: none; }
+</style>
 {% endblock %}

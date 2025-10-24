@@ -1,4 +1,5 @@
 from django import forms
+from .models import Testimonial
 
 
 class ContactForm(forms.Form):
@@ -35,3 +36,34 @@ class ContactForm(forms.Form):
         if content_type and content_type not in valid_mimes:
             raise forms.ValidationError('Unsupported file type. Please upload a PDF or image.')
         return f
+
+
+class SubscribeForm(forms.Form):
+    email = forms.EmailField(widget=forms.EmailInput(attrs={
+        'placeholder': 'you@domain.com'
+    }))
+    hp = forms.CharField(required=False, widget=forms.HiddenInput)
+
+    def clean_hp(self):
+        data = self.cleaned_data.get('hp')
+        if data:
+            raise forms.ValidationError('Spam detected')
+        return data
+
+
+class TestimonialForm(forms.ModelForm):
+    hp = forms.CharField(required=False, widget=forms.HiddenInput)
+    email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={'placeholder': 'you@company.com'}))
+
+    class Meta:
+        model = Testimonial
+        fields = ['name','role','email','content','image']
+        widgets = {
+            'content': forms.Textarea(attrs={'rows': 6, 'placeholder': 'Share your experience working with me'}),
+        }
+
+    def clean_hp(self):
+        data = self.cleaned_data.get('hp')
+        if data:
+            raise forms.ValidationError('Spam detected')
+        return data

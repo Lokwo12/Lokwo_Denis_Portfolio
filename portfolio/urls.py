@@ -5,8 +5,13 @@ app_name = 'portfolio'
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('testimonials/', views.testimonials, name='testimonials'),
     path('about/', views.about, name='about'),
     path('about.pdf', views.about_pdf, name='about_pdf'),
+    path('subscribe/', views.subscribe, name='subscribe'),
+    path('subscribe/confirm/<uuid:token>/', views.subscribe_confirm, name='subscribe_confirm'),
+    path('unsubscribe/<uuid:token>/', views.unsubscribe, name='unsubscribe'),
+    path('recommend/', views.recommend, name='recommend'),
     path('sitemap/', views.html_sitemap, name='html_sitemap'),
     path('contact/', views.contact, name='contact'),
     path('privacy/', views.privacy, name='privacy'),

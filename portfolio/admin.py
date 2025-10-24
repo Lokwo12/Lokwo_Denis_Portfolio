@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Message, Project, Testimonial, Tag, Profile, ExperienceItem, EducationItem, CertificationItem, AwardItem, SiteSettings, AchievementItem, SkillItem, GalleryItem
+from .models import Message, Project, Testimonial, Tag, Profile, ExperienceItem, EducationItem, CertificationItem, AwardItem, SiteSettings, AchievementItem, SkillItem, GalleryItem, Subscription
 from django.core.mail import send_mail
 from django.conf import settings
 from django.shortcuts import redirect
@@ -71,6 +71,18 @@ class ProjectAdmin(admin.ModelAdmin):
 	list_editable = ('is_featured','featured_order')
 	ordering = ('-date', 'featured_order')
 	readonly_fields = ('key',)
+	autocomplete_fields = ('tags',)
+
+	def get_queryset(self, request):
+		qs = super().get_queryset(request)
+		# Prefetch tags to reduce queries on changelist
+		return qs.prefetch_related('tags')
+	fieldsets = (
+		(None, {'fields': ('title','slug','category','date','image','url','description')}),
+		('Tech', {'fields': ('technologies','tags')}),
+		('Featured', {'fields': ('is_featured','featured_order')}),
+		('Meta', {'fields': ('key',)}),
+	)
 
 
 @admin.register(Tag)
@@ -82,10 +94,60 @@ class TagAdmin(admin.ModelAdmin):
 
 @admin.register(Testimonial)
 class TestimonialAdmin(admin.ModelAdmin):
-	list_display = ('name', 'role', 'featured', 'created_at')
-	search_fields = ('name', 'role', 'content')
+	list_display = ('name', 'role', 'email', 'featured', 'order', 'created_at')
+	search_fields = ('name', 'role', 'email', 'content')
 	list_filter = ('featured', 'created_at')
 	readonly_fields = ('key',)
+	list_editable = ('featured','order')
+
+	actions = ['notify_selected_featured']
+
+	def save_model(self, request, obj, form, change):
+		# Detect if 'featured' changed to True and notify user if email provided
+		notify = False
+		if change:
+			try:
+				old = Testimonial.objects.get(pk=obj.pk)
+				if not old.featured and obj.featured:
+					notify = True
+			except Testimonial.DoesNotExist:
+				pass
+		else:
+			# On create, don't notify; only on approval/feature
+			notify = False
+		super().save_model(request, obj, form, change)
+		if notify and getattr(obj, 'email', ''):
+			try:
+				site_name = getattr(settings, 'SITE_NAME', 'Portfolio')
+				subject = f"Your recommendation was featured on {site_name}!"
+				body = (
+					f"Hi {obj.name},\n\n"
+					f"Thanks again for your kind words. Your recommendation has just been featured on my portfolio.\n\n"
+					f"Best regards,\nDenis"
+				)
+				send_mail(subject, body, getattr(settings, 'DEFAULT_FROM_EMAIL', None), [obj.email], fail_silently=True)
+				self.message_user(request, f"Notified {obj.email} about featuring.")
+			except Exception:
+				self.message_user(request, f"Could not notify {obj.email}.", level='warning')
+
+	def notify_selected_featured(self, request, queryset):
+		count = 0
+		for t in queryset:
+			if t.featured and getattr(t, 'email', ''):
+				try:
+					site_name = getattr(settings, 'SITE_NAME', 'Portfolio')
+					subject = f"Your recommendation was featured on {site_name}!"
+					body = (
+						f"Hi {t.name},\n\n"
+						f"Thanks again for your kind words. Your recommendation has just been featured on my portfolio.\n\n"
+						f"Best regards,\nDenis"
+					)
+					send_mail(subject, body, getattr(settings, 'DEFAULT_FROM_EMAIL', None), [t.email], fail_silently=True)
+					count += 1
+				except Exception:
+					pass
+		self.message_user(request, f"Sent notifications to {count} user(s).")
+	notify_selected_featured.short_description = "Notify users for selected featured testimonials"
 
 
 @admin.register(Profile)
@@ -266,15 +328,17 @@ ProfileAdmin.inlines = [ExperienceInline, EducationInline, CertificationInline, 
 class SiteSettingsAdmin(admin.ModelAdmin):
 	fieldsets = (
 	(None, {'fields': ('brand_name','active_profile')}),
-	('Brand', {'fields': ('logo','logo_light','logo_dark','favicon','default_og_image')}),
-		('Homepage', {'fields': ('home_avatar',)}),
+	('Brand', {'fields': ('logo','logo_light','logo_dark','primary_color','favicon','default_og_image')}),
+		('Homepage', {'fields': ('home_avatar','show_testimonials_home','testimonials_home_limit')}),
 		('Hero', {'fields': ('home_eyebrow','hero_heading','hero_subheading','home_roles','resume_file')}),
 		('Contact', {'fields': ('contact_title','contact_subtitle','email','phone','location','calendly_url')}),
 	('Social', {'fields': ('github_url','linkedin_url','twitter_url','youtube_url')}),
 		('Analytics', {'fields': ('analytics_measurement_id','consent_required')}),
 		('Timestamps', {'fields': ('key','created_at','updated_at')}),
 	)
-	readonly_fields = ('created_at','updated_at')
+	autocomplete_fields = ('active_profile',)
+	list_select_related = ('active_profile',)
+	readonly_fields = ('key','created_at','updated_at')
 
 	def has_add_permission(self, request):
 		# Allow only a single instance
@@ -328,7 +392,8 @@ class GalleryItemAdmin(admin.ModelAdmin):
 	list_filter = ('is_published','created_at', SourceFilter)
 	ordering = ('order','-created_at')
 	readonly_fields = ('created_at','key')
-	raw_id_fields = ('project','post')
+	autocomplete_fields = ('project','post')
+	list_select_related = ('project','post')
 	list_editable = ('is_published','order')
 	fieldsets = (
 		(None, {'fields': ('title','image')}),
@@ -346,4 +411,12 @@ class GalleryItemAdmin(admin.ModelAdmin):
 	def unpublish_selected(self, request, queryset):
 		updated = queryset.update(is_published=False)
 		self.message_user(request, f"{updated} item(s) unpublished.")
+
+
+@admin.register(Subscription)
+class SubscriptionAdmin(admin.ModelAdmin):
+	list_display = ('email','active','created_at')
+	list_filter = ('active','created_at')
+	search_fields = ('email',)
+	readonly_fields = ('created_at','token')
 

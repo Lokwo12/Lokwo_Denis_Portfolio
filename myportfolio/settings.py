@@ -36,7 +36,15 @@ ALLOWED_HOSTS = _env_hosts or ['127.0.0.1', 'localhost', 'testserver']
 
 # Application definition
 
+# Optionally enable Jazzmin if available in this environment
+try:
+    import jazzmin  # type: ignore
+    _HAS_JAZZMIN = True
+except Exception:
+    _HAS_JAZZMIN = False
+
 INSTALLED_APPS = [
+    *(['jazzmin'] if _HAS_JAZZMIN else []),
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -219,6 +227,20 @@ PROFILE = {
     'certifications': [],
     'awards': [],
 }
+
+# Jazzmin admin theme configuration (minimal) — only applied when installed
+if _HAS_JAZZMIN:
+    JAZZMIN_SETTINGS = {
+        "site_title": "Portfolio Admin",
+        "site_header": "Portfolio Admin",
+        "welcome_sign": "Welcome to Portfolio Admin",
+        # Use favicon if available
+        "site_logo": None,
+    }
+
+    JAZZMIN_UI_TWEAKS = {
+        # Keep defaults; can be customized later
+    }
 
 # Production static files storage (hashing + compression)
 if not DEBUG:

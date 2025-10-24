@@ -97,6 +97,18 @@
 	</header>
 
 	<main>
+			{# Flash messages #}
+			{% if messages %}
+			<div class="container" role="status" aria-live="polite" style="margin-top:12px">
+				<ul class="flash-messages" style="list-style:none;padding:0;margin:0;display:grid;gap:10px">
+					{% for message in messages %}
+					<li class="flash {{ message.tags }}" style="padding:10px 14px;border-radius:8px;background:var(--surface-2,#0b12224d);color:var(--text,#e2e8f0);border:1px solid var(--border,#1e293b)">
+						{{ message }}
+					</li>
+					{% endfor %}
+				</ul>
+			</div>
+			{% endif %}
 			<div id="main-content">{% block content %}{% endblock %}</div>
 	</main>
 
@@ -121,6 +133,7 @@
 					<li><a href="/projects/">Projects</a></li>
 					<li><a href="/blog/">Blog</a></li>
 					<li><a href="/contact/">Contact</a></li>
+					<li><a href="/recommend/">Leave a Testimonial</a></li>
 					<li><a href="{% url 'portfolio:portfolio_pdf' %}">Download Portfolio PDF</a></li>
 				</ul>
 			</div>
@@ -137,6 +150,18 @@
 					{% if SITE.youtube_url %}<li><a href="{{ SITE.youtube_url }}" target="_blank" rel="noopener">YouTube</a></li>{% endif %}
 					{% if PROFILE.whatsapp_link %}<li><a href="https://wa.me/{{ PROFILE.whatsapp_link }}" target="_blank" rel="noopener">WhatsApp</a></li>{% endif %}
 				</ul>
+			</div>
+			<div class="footer-col">
+				<h4 class="footer-title">Subscribe</h4>
+				<p class="muted" style="margin:0 0 8px;color:var(--muted,#94a3b8)">Get updates about new projects and posts. We’ll email a confirmation link.</p>
+				<form method="post" action="{% url 'portfolio:subscribe' %}" class="footer-subscribe" style="display:flex;gap:8px;flex-wrap:wrap">
+					{% csrf_token %}
+					<input type="email" name="email" required placeholder="you@domain.com" aria-label="Email address" style="flex:1;min-width:210px;padding:10px 12px;border-radius:8px;border:1px solid var(--border,#1e293b);background:var(--surface,#0b1222);color:var(--text,#e2e8f0)">
+					<input type="hidden" name="hp" value="">
+					<input type="hidden" name="next" value="{{ request.get_full_path }}">
+					<button type="submit" class="btn" style="padding:10px 14px;border-radius:8px">Subscribe</button>
+				</form>
+				<small class="muted" style="display:block;margin-top:6px;color:var(--muted,#94a3b8)">No spam. Unsubscribe anytime.</small>
 			</div>
 		</div>
 		<div class="container footer-bottom">
