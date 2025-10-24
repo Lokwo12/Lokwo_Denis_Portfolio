@@ -658,7 +658,7 @@ def gallery(request):
 	items.sort(key=lambda x: x.get('date') or 0, reverse=True)
 
 	# Paginate
-	paginator = Paginator(items, 12)
+	paginator = Paginator(items, 6)
 	page_number = request.GET.get('page')
 	page_obj = paginator.get_page(page_number)
 	return render(request, 'gallery.html', {
