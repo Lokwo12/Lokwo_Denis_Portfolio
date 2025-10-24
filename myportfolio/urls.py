@@ -20,14 +20,21 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.sitemaps.views import sitemap
 from django.views.generic import TemplateView
-from portfolio.sitemaps import StaticViewSitemap, PostSitemap, ProjectSitemap
+from django.views.decorators.cache import cache_page
+from portfolio.sitemaps import StaticViewSitemap, PostSitemap, ProjectSitemap, BlogCategorySitemap, BlogTagSitemap
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('portfolio.urls')),
     path('blog/', include('blog.urls')),
-    path('sitemap.xml', sitemap, {'sitemaps': {'static': StaticViewSitemap, 'blog': PostSitemap, 'projects': ProjectSitemap}}, name='sitemap'),
-    path('robots.txt', TemplateView.as_view(template_name='robots.txt', content_type='text/plain')),
+    path('sitemap.xml', cache_page(60 * 60 * 24)(sitemap), {'sitemaps': {
+        'static': StaticViewSitemap,
+        'blog': PostSitemap,
+        'projects': ProjectSitemap,
+        'blog-categories': BlogCategorySitemap,
+        'blog-tags': BlogTagSitemap,
+    }}, name='sitemap'),
+    path('robots.txt', cache_page(60 * 60 * 24)(TemplateView.as_view(template_name='robots.txt', content_type='text/plain'))),
 ]
 
 if settings.DEBUG:

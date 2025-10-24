@@ -1,44 +1,58 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static site_extras %}
 {% block title %}Contact — Denis Lokwo{% endblock %}
 {% block content %}
 <section class="container" style="margin:48px auto;">
     <header class="contact-hero fade-up">
         <span class="eyebrow">Get in touch</span>
-        <h1 class="title" style="margin-bottom:8px;">Let's build something great</h1>
-        <p class="lead">Have a question, idea, or project? Send a message and I'll reply within 24–48 hours.</p>
+        <h1 class="title" style="margin-bottom:8px;">{{ SITE.contact_title|default:"Let's build something great" }}</h1>
+        <p class="lead">{{ SITE.contact_subtitle|default:"Have a question, idea, or project? Send a message and I'll reply within 24–48 hours." }}</p>
     </header>
 
     <div class="contact-layout">
         <aside class="contact-card info-card">
             <div class="contact-profile">
-                <img class="contact-avatar" src="{% static 'images/avatar.svg' %}" alt="Denis Lokwo" />
+                {% if PROFILE.avatar_url %}
+                <img class="contact-avatar" src="{{ PROFILE.avatar_url }}" alt="{{ PROFILE.name }}" />
+                {% else %}
+                <img class="contact-avatar" src="{% static 'images/avatar.svg' %}" alt="{{ PROFILE.name }}" />
+                {% endif %}
                 <div>
-                    <h3 class="contact-name">Denis Lokwo</h3>
-                    <p class="contact-role">Full-stack Developer</p>
+                    <h3 class="contact-name">{{ PROFILE.name }}</h3>
+                    <p class="contact-role">{{ PROFILE.title|default:'Full-stack Developer' }}</p>
                 </div>
             </div>
             <ul class="contact-list">
                 <li>
                     <span class="icon" aria-hidden="true">✉️</span>
-                    <a href="mailto:denis@email.com">denis@email.com</a>
+                    <a href="mailto:{{ SITE.email|default:PROFILE.email }}">{{ SITE.email|default:PROFILE.email }}</a>
                 </li>
                 <li>
                     <span class="icon" aria-hidden="true">📞</span>
-                    <a href="tel:+1234567890">+1 234 567 890</a>
+                    <a href="tel:{{ SITE.phone|default:PROFILE.phone }}">{{ SITE.phone|default:PROFILE.phone }}</a>
                 </li>
                 <li>
                     <span class="icon" aria-hidden="true">💬</span>
-                    <a href="https://wa.me/1234567890?text={{ 'Hello Denis, I would like to discuss a project.'|urlencode }}" target="_blank" rel="noopener">WhatsApp</a>
+                    {% if PROFILE.whatsapp_link %}
+                    <a href="https://wa.me/{{ PROFILE.whatsapp_link }}?text={{ 'Hello, I would like to discuss a project.'|urlencode }}" target="_blank" rel="noopener">WhatsApp</a>
+                    {% endif %}
                 </li>
                 <li>
                     <span class="icon" aria-hidden="true">📍</span>
-                    Nairobi, Kenya
+                    {{ SITE.location|default:PROFILE.location|default:'-' }}
                 </li>
             </ul>
             <div class="contact-actions">
+                {% if SITE.resume_url %}
+                <a class="btn secondary" href="{{ SITE.resume_url }}" download>Download CV</a>
+                {% else %}
                 <a class="btn secondary" href="{% static 'resume/Denis_Lokwo_Resume.pdf' %}" download>Download CV</a>
-                <a class="btn" href="https://github.com/Lokwo12" target="_blank" rel="noopener">GitHub</a>
+                {% endif %}
+                {% with gh_fallback=PROFILE.links|get:'github' %}
+                {% if SITE.github_url or gh_fallback %}
+                <a class="btn" href="{{ SITE.github_url|default:gh_fallback }}" target="_blank" rel="noopener">GitHub</a>
+                {% endif %}
+                {% endwith %}
             </div>
         </aside>
 
@@ -70,21 +84,21 @@
                 </div>
                                 <div class="actions">
                                         <button type="submit" class="btn">Send Message</button>
-                                        <a class="btn secondary" href="mailto:denis@email.com">Email directly</a>
+                                        <a class="btn secondary" href="mailto:{{ SITE.email|default:PROFILE.email }}">Email directly</a>
                                 </div>
             </form>
         </section>
     </div>
 </section>
-{% if CALENDLY_URL %}
+{% if SITE.calendly_url %}
 <section class="container" style="margin:24px auto;">
     <div class="contact-card" aria-label="Booking widget">
         <h3 style="margin-top:0;margin-bottom:10px">Book a call</h3>
         <div class="booking-wrapper">
-            <div class="calendly-inline-widget booking-embed" data-url="{{ CALENDLY_URL }}"></div>
+            <div class="calendly-inline-widget booking-embed" data-url="{{ SITE.calendly_url }}"></div>
             <div class="embed-skeleton" aria-hidden="true">Loading scheduler…</div>
         </div>
-        <p class="help" style="margin-top:8px">If the embed doesn’t load, open <a href="{{ CALENDLY_URL }}" target="_blank" rel="noopener">Calendly</a> in a new tab.</p>
+        <p class="help" style="margin-top:8px">If the embed doesn’t load, open <a href="{{ SITE.calendly_url }}" target="_blank" rel="noopener">Calendly</a> in a new tab.</p>
     </div>
 </section>
 {% else %}
@@ -99,7 +113,7 @@
 
 {% block extra_js %}
 <script src="{% static 'js/contact.js' %}"></script>
-{% if CALENDLY_URL %}
+{% if SITE.calendly_url %}
 <script type="text/javascript" src="https://assets.calendly.com/assets/external/widget.js" async></script>
 {% endif %}
 {% endblock %}

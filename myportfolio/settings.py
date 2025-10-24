@@ -75,6 +75,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'portfolio.context_processors.analytics',
                 'portfolio.context_processors.profile',
+                'portfolio.context_processors.site_settings',
             ],
             # Ensure custom template tag libraries are always discoverable
             'libraries': {

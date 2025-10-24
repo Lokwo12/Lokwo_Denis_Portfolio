@@ -33,10 +33,13 @@
         <header class="pd-head">
             <div>
                 <h1 class="title" style="margin:0 0 6px">{{ project.title }}</h1>
-                <p class="meta">{{ project.category|default:'General' }} • {{ project.date|date:'F Y' }}</p>
+                <div class="badge-list" style="margin:0 0 8px">
+                    <span class="chip">{{ project.category|default:'General' }}</span>
+                    <span class="chip">{{ project.date|date:'F Y' }}</span>
+                </div>
                 {% with techs=project.tech_list %}
                 {% if techs %}
-                <div class="tech-chips" style="margin:8px 0 12px">{% for t in techs %}<span class="chip">{{ t }}</span>{% endfor %}</div>
+                <div class="badge-list" style="margin:8px 0 12px">{% for t in techs %}<span class="chip">{% tech_icon t 16 %} {{ t }}</span>{% endfor %}</div>
                 {% endif %}
                 {% endwith %}
                 <div class="cta-row">
@@ -45,7 +48,7 @@
                 </div>
             </div>
             {% if project.image %}
-            <div class="pd-media"><img src="{{ project.image.url }}" alt="{{ project.title }} screenshot"></div>
+            <div class="pd-media"><img src="{{ project.image.url }}" alt="{{ project.title }} screenshot" width="{{ project.image.width }}" height="{{ project.image.height }}" sizes="(max-width: 880px) 100vw, 360px"></div>
             {% endif %}
         </header>
 

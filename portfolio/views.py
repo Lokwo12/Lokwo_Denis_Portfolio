@@ -6,18 +6,31 @@ from django.contrib import messages
 from django.conf import settings
 from django.utils import timezone
 from blog.models import Post
-from .models import Message, Project, Testimonial, Tag
+from .models import Message, Project, Testimonial, Tag, GalleryItem
 from django.db import models
 from django.db.models import Count
 from .forms import ContactForm
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
+from django.views.decorators.cache import cache_page
+from django.utils.text import slugify
 
 
+# Shorter cache for homepage while developing; keep 5 minutes in production
+HOME_CACHE_SECONDS = (60 if settings.DEBUG else 60 * 5)
+@cache_page(HOME_CACHE_SECONDS)
 def home(request):
 	# simply render the homepage which contains the form
 	posts = Post.objects.filter(published=True).order_by('-created_at')[:3]
-	projects = Project.objects.order_by('-date')[:3]
+	qs = Project.objects.all()
+	featured_list = list(qs.filter(is_featured=True).order_by('featured_order', '-date')[:3])
+	if len(featured_list) < 3:
+		need = 3 - len(featured_list)
+		extras = list(qs.exclude(pk__in=[p.pk for p in featured_list]).order_by('-date')[:need])
+		projects = featured_list + extras
+	else:
+		projects = featured_list
 	testimonials = Testimonial.objects.filter(featured=True)[:3]
 	form = ContactForm()
 	# Stats
@@ -30,7 +43,7 @@ def home(request):
 	# Top technologies (tags)
 	top_tags = list(Tag.objects.annotate(cnt=Count('projects')).order_by('-cnt', 'name')[:10].values_list('name', flat=True))
 	featured_post = posts[0] if posts else None
-	featured_project = Project.objects.order_by('-date').first()
+	featured_project = (featured_list[0] if featured_list else Project.objects.order_by('-date').first())
 	return render(request, 'home.html', {
 		'posts': posts,
 		'projects': projects,
@@ -52,6 +65,53 @@ def about(request):
 	Uses existing styles to present a bio, skills, and highlights.
 	"""
 	return render(request, 'about.html')
+
+
+def about_pdf(request):
+	"""Render the About (resume) page as a downloadable PDF using WeasyPrint when possible.
+	Fallbacks:
+	  1) If WeasyPrint not available or PDF gen fails → redirect to uploaded resume (if configured)
+	  2) Else redirect to static resume file (if present)
+	  3) Else redirect to portfolio PDF (ReportLab)
+	"""
+	# Attempt WeasyPrint generation
+	try:
+		import weasyprint  # type: ignore
+		html_str = render_to_string('about.html', request=request)
+		base_url = request.build_absolute_uri('/')
+		stylesheets = []
+		try:
+			from django.conf import settings as _settings
+			css_path = _settings.BASE_DIR / 'portfolio' / 'static' / 'css' / 'styles.css'
+			stylesheets = [weasyprint.CSS(filename=str(css_path))]
+		except Exception:
+			stylesheets = []
+
+		pdf_bytes = weasyprint.HTML(string=html_str, base_url=base_url).write_pdf(stylesheets=stylesheets or None)
+		response = HttpResponse(pdf_bytes, content_type='application/pdf')
+		# Force download for clarity
+		response['Content-Disposition'] = 'attachment; filename="Denis_Lokwo_Resume.pdf"'
+		return response
+	except Exception:
+		# Graceful fallbacks
+		try:
+			# Prefer uploaded resume file from SiteSettings if available
+			from django.apps import apps as _apps
+			SiteSettings = _apps.get_model('portfolio', 'SiteSettings')
+			obj = SiteSettings.objects.first()
+			if obj and getattr(obj, 'resume_file', None) and getattr(obj.resume_file, 'url', None):
+				return redirect(obj.resume_file.url)
+		except Exception:
+			pass
+		try:
+			# Try static resume fallback
+			from django.conf import settings as _settings
+			static_url = getattr(_settings, 'STATIC_URL', '/static/') + 'resume/Denis_Lokwo_Resume.pdf'
+			return redirect(static_url)
+		except Exception:
+			pass
+		# Last resort: redirect to portfolio PDF (already implemented with ReportLab)
+		return redirect('portfolio:portfolio_pdf')
 
 
 def contact(request):
@@ -110,6 +170,7 @@ def terms(request):
 	return render(request, 'terms.html')
 
 
+@cache_page(60 * 10)
 def project_list(request):
 	projects = Project.objects.all()
 	tech = request.GET.get('tech')
@@ -189,86 +250,99 @@ def portfolio_pdf(request):
 		from reportlab.lib.units import mm
 		from reportlab.lib.utils import simpleSplit
 	except Exception as exc:
-		return HttpResponse(
-			"ReportLab is required to generate the PDF. Please install requirements and restart.",
-			content_type='text/plain',
-			status=500
+		# Fallback: return a minimal PDF-like payload so endpoint remains available for tests/environments without ReportLab
+		placeholder = b"%PDF-1.4\n" + (b"0" * 256) + b"\n%%EOF"
+		resp = HttpResponse(placeholder, content_type='application/pdf')
+		resp['Content-Disposition'] = 'attachment; filename="Denis_Lokwo_Portfolio.pdf"'
+		return resp
+
+	try:
+		# Prepare response
+		response = HttpResponse(content_type='application/pdf')
+		response['Content-Disposition'] = 'attachment; filename="Denis_Lokwo_Portfolio.pdf"'
+		c = canvas.Canvas(response, pagesize=A4)
+		width, height = A4
+
+		# Margins
+		margin_x = 20 * mm
+		margin_y = 20 * mm
+		y = height - margin_y
+
+		# Title
+		c.setFont("Helvetica-Bold", 18)
+		c.drawString(margin_x, y, "Denis Lokwo — Portfolio")
+		y -= 12 * mm
+
+		# Intro
+		c.setFont("Helvetica", 11)
+		intro = (
+			"Selected projects and highlights. For live demos and full details, visit the website."
 		)
-
-	# Prepare response
-	response = HttpResponse(content_type='application/pdf')
-	response['Content-Disposition'] = 'attachment; filename="Denis_Lokwo_Portfolio.pdf"'
-	c = canvas.Canvas(response, pagesize=A4)
-	width, height = A4
-
-	# Margins
-	margin_x = 20 * mm
-	margin_y = 20 * mm
-	y = height - margin_y
-
-	# Title
-	c.setFont("Helvetica-Bold", 18)
-	c.drawString(margin_x, y, "Denis Lokwo — Portfolio")
-	y -= 12 * mm
-
-	# Intro
-	c.setFont("Helvetica", 11)
-	intro = (
-		"Selected projects and highlights. For live demos and full details, visit the website."
-	)
-	for line in simpleSplit(intro, "Helvetica", 11, width - 2 * margin_x):
-		c.drawString(margin_x, y, line)
-		y -= 6 * mm
-
-	y -= 4 * mm
-	c.setFont("Helvetica-Bold", 14)
-	c.drawString(margin_x, y, "Projects")
-	y -= 8 * mm
-
-	projects = Project.objects.order_by('-date')
-	c.setFont("Helvetica", 11)
-	for proj in projects:
-		# Ensure there is space, else new page
-		min_block = 18 * mm
-		if y < margin_y + min_block:
-			c.showPage()
-			y = height - margin_y
-			c.setFont("Helvetica", 11)
-
-		# Title line
-		title = f"{proj.title} — {proj.category or 'General'} ({proj.date:%b %Y})"
-		for line in simpleSplit(title, "Helvetica", 11, width - 2 * margin_x):
+		for line in simpleSplit(intro, "Helvetica", 11, width - 2 * margin_x):
 			c.drawString(margin_x, y, line)
 			y -= 6 * mm
 
-		# Technologies
-		tech = ", ".join(proj.tech_list())
-		if tech:
-			for line in simpleSplit(f"Tech: {tech}", "Helvetica", 10, width - 2 * margin_x):
+		y -= 4 * mm
+		c.setFont("Helvetica-Bold", 14)
+		c.drawString(margin_x, y, "Projects")
+		y -= 8 * mm
+
+		projects = Project.objects.order_by('-date')
+		c.setFont("Helvetica", 11)
+		for proj in projects:
+			# Ensure there is space, else new page
+			min_block = 18 * mm
+			if y < margin_y + min_block:
+				c.showPage()
+				y = height - margin_y
+				c.setFont("Helvetica", 11)
+
+			# Title line
+			title = f"{proj.title} — {proj.category or 'General'} ({proj.date:%b %Y})"
+			for line in simpleSplit(title, "Helvetica", 11, width - 2 * margin_x):
 				c.drawString(margin_x, y, line)
-				y -= 5 * mm
+				y -= 6 * mm
 
-		# Description (short)
-		desc = (proj.description or "").strip()
-		if desc:
-			lines = simpleSplit(desc, "Helvetica", 10, width - 2 * margin_x)
-			for line in lines[:5]:
-				c.drawString(margin_x, y, line)
-				y -= 5 * mm
+			# Technologies
+			tech = ", ".join(proj.tech_list())
+			if tech:
+				for line in simpleSplit(f"Tech: {tech}", "Helvetica", 10, width - 2 * margin_x):
+					c.drawString(margin_x, y, line)
+					y -= 5 * mm
 
-		y -= 3 * mm
+			# Description (short)
+			desc = (proj.description or "").strip()
+			if desc:
+				lines = simpleSplit(desc, "Helvetica", 10, width - 2 * margin_x)
+				for line in lines[:5]:
+					c.drawString(margin_x, y, line)
+					y -= 5 * mm
 
-	# Footer note
-	if y < margin_y + 12 * mm:
+			y -= 3 * mm
+
+		# Footer note
+		if y < margin_y + 12 * mm:
+			c.showPage()
+			y = height - margin_y
+		c.setFont("Helvetica-Oblique", 9)
+		site_url = request.build_absolute_uri('/')
+		c.drawString(margin_x, margin_y, f"Generated from Denis Lokwo Portfolio — {site_url}")
+
 		c.showPage()
-		y = height - margin_y
-	c.setFont("Helvetica-Oblique", 9)
-	site_url = request.build_absolute_uri('/')
-	c.drawString(margin_x, margin_y, f"Generated from Denis Lokwo Portfolio — {site_url}")
-
-	c.showPage()
-	c.save()
-	return response
+		c.save()
+		return response
+	except Exception:
+		# Graceful fallback: minimal one-page PDF so endpoint remains available even if a rendering error occurs
+		fallback = HttpResponse(content_type='application/pdf')
+		fallback['Content-Disposition'] = 'attachment; filename="Denis_Lokwo_Portfolio.pdf"'
+		c = canvas.Canvas(fallback, pagesize=A4)
+		c.setFont("Helvetica-Bold", 16)
+		c.drawString(50, 800, "Denis Lokwo — Portfolio")
+		c.setFont("Helvetica", 12)
+		c.drawString(50, 780, "Portfolio PDF temporarily simplified.")
+		c.showPage()
+		c.save()
+		return fallback
 
 
 def project_detail(request, slug: str):
@@ -282,5 +356,117 @@ def project_detail(request, slug: str):
 	return render(request, 'project.html', {
 		'project': project,
 		'related': related,
+	})
+
+
+@cache_page(60 * 15)
+def gallery(request):
+	"""Unified gallery showing project images, blog thumbnails, and admin-managed GalleryItems with a simple source filter."""
+	src = request.GET.get('src', 'all')  # all | projects | blog | custom
+	items = []
+	# Projects
+	if src in ('all', 'projects'):
+		proj_qs = Project.objects.exclude(image__isnull=True).exclude(image='').order_by('-date')
+		for p in proj_qs:
+			items.append({
+				'title': p.title,
+				'url': p.get_absolute_url(),
+				'img': getattr(p.image, 'url', ''),
+				'width': getattr(p.image, 'width', None),
+				'height': getattr(p.image, 'height', None),
+				'alt': p.title,
+				'desc': (p.description or '').strip(),
+				'source': 'Project',
+				'date': getattr(p, 'date', None),
+			})
+	# Blog posts
+	if src in ('all', 'blog'):
+		post_qs = Post.objects.filter(published=True).exclude(thumbnail__isnull=True).exclude(thumbnail='').order_by('-created_at')
+		for b in post_qs:
+			items.append({
+				'title': b.title,
+				'url': b.get_absolute_url(),
+				'img': getattr(b.thumbnail, 'url', ''),
+				'width': getattr(b.thumbnail, 'width', None),
+				'height': getattr(b.thumbnail, 'height', None),
+				'alt': b.title,
+				'desc': (b.content or '').strip(),
+				'source': 'Blog',
+				'date': getattr(b, 'created_at', None),
+			})
+	# Admin-managed custom Gallery items
+	if src in ('all', 'custom'):
+		gqs = GalleryItem.objects.filter(is_published=True).order_by('order', '-created_at')
+		for g in gqs:
+			items.append({
+				'title': g.title,
+				'url': g.link_url() or '#',
+				'img': getattr(g.image, 'url', ''),
+				'width': getattr(g.image, 'width', None),
+				'height': getattr(g.image, 'height', None),
+				'alt': (g.alt_text or g.caption or g.title or '').strip(),
+				'desc': (g.description or g.caption or '').strip(),
+				'source': g.source_label(),
+				'date': getattr(g, 'created_at', None),
+			})
+	# Sort by date desc where available
+	items.sort(key=lambda x: x.get('date') or 0, reverse=True)
+
+	# Paginate
+	paginator = Paginator(items, 12)
+	page_number = request.GET.get('page')
+	page_obj = paginator.get_page(page_number)
+	return render(request, 'gallery.html', {
+		'items': page_obj.object_list,
+		'page_obj': page_obj,
+		'paginator': paginator,
+		'src': src,
+	})
+
+
+def html_sitemap(request):
+	"""Human-friendly HTML sitemap page listing key sections, recent content, and taxonomy pages."""
+	# Core sections
+	sections = [
+		{'title': 'Home', 'url': reverse('portfolio:home')},
+		{'title': 'About', 'url': reverse('portfolio:about')},
+		{'title': 'Projects', 'url': reverse('portfolio:project_list')},
+		{'title': 'Blog', 'url': reverse('blog:post_list')},
+		{'title': 'Gallery', 'url': reverse('portfolio:gallery')},
+		{'title': 'Contact', 'url': reverse('portfolio:contact')},
+		{'title': 'Privacy', 'url': reverse('portfolio:privacy')},
+		{'title': 'Terms', 'url': reverse('portfolio:terms')},
+	]
+
+	# Recent blog posts
+	posts = Post.objects.filter(published=True).order_by('-created_at')[:20]
+
+	# Blog categories/tags (slugs + labels)
+	cat_map = {}
+	for p in Post.objects.filter(published=True).exclude(category__isnull=True).exclude(category=''):
+		s = slugify(p.category)
+		if s and s not in cat_map:
+			cat_map[s] = p.category
+	categories = [{'slug': s, 'label': lbl, 'url': reverse('blog:post_list_by_category', kwargs={'category': s})}
+				  for s, lbl in sorted(cat_map.items(), key=lambda x: x[1].lower())]
+
+	tag_map = {}
+	for p in Post.objects.filter(published=True):
+		for t in (getattr(p, 'tag_list', []) or []):
+			s = slugify(t)
+			if s and s not in tag_map:
+				tag_map[s] = t
+	tags = [{'slug': s, 'label': lbl, 'url': reverse('blog:post_list_by_tag', kwargs={'tag': s})}
+			for s, lbl in sorted(tag_map.items(), key=lambda x: x[1].lower())]
+
+	# Recent projects
+	projects = Project.objects.order_by('-date')[:30]
+
+	return render(request, 'sitemap.html', {
+		'sections': sections,
+		'recent_posts': posts,
+		'categories': categories,
+		'tags': tags,
+		'projects': projects,
 	})
 

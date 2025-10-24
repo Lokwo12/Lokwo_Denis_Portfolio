@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static site_extras %}
 {% block title %}Projects — Denis Lokwo{% endblock %}
 {% block content %}
 <section class="container" style="margin-top:48px;">
@@ -56,21 +56,35 @@
     <div class="project-list">
         {% for project in projects %}
             <div class="project-card">
-                <h3><a href="{{ project.get_absolute_url }}">{{ project.title }}</a></h3>
-                <p class="meta">{{ project.category }} | {{ project.date|date:"F Y" }}</p>
-                <p>{{ project.description|truncatewords:30 }}</p>
-                {% with techs=project.tech_list %}
-                {% if techs %}
-                <div class="tech-chips">
-                    {% for t in techs %}
-                        <a class="chip" href="?tech={{ t|urlencode }}&category={{ selected_category|urlencode }}&search={{ search|urlencode }}">{{ t }}</a>
-                    {% endfor %}
-                </div>
-                {% endif %}
-                {% endwith %}
-                <div style="display:flex;gap:10px;flex-wrap:wrap">
-                    <a href="{{ project.get_absolute_url }}" class="btn" data-ev="case_study_open" data-project="{{ project.title }}" data-slug="{{ project.slug }}">Read case study</a>
-                    {% if project.url %}<a href="{{ project.url }}" class="btn secondary" target="_blank" rel="noopener" data-ev="project_view_live" data-project="{{ project.title }}" data-url="{{ project.url }}">View live</a>{% endif %}
+                <div class="pc-grid">
+                    <div class="pc-content">
+                        <h3 style="margin:0 0 6px"><a href="{{ project.get_absolute_url }}">{{ project.title }}</a></h3>
+                        <div class="badge-list" style="margin-bottom:8px">
+                            {% if project.category %}<span class="chip">{{ project.category }}</span>{% endif %}
+                            <span class="chip">{{ project.date|date:"F Y" }}</span>
+                        </div>
+                        <p style="margin:0 0 10px">{{ project.description|truncatewords:30 }}</p>
+                        {% with techs=project.tech_list %}
+                        {% if techs %}
+                        <div class="badge-list" aria-label="Technologies">
+                            {% for t in techs %}
+                                <a class="chip" href="?tech={{ t|urlencode }}&category={{ selected_category|urlencode }}&search={{ search|urlencode }}">{% tech_icon t 16 %} {{ t }}</a>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+                            <a href="{{ project.get_absolute_url }}" class="btn" data-ev="case_study_open" data-project="{{ project.title }}" data-slug="{{ project.slug }}">Read case study</a>
+                            {% if project.url %}<a href="{{ project.url }}" class="btn secondary" target="_blank" rel="noopener" data-ev="project_view_live" data-project="{{ project.title }}" data-url="{{ project.url }}">View live</a>{% endif %}
+                        </div>
+                    </div>
+                    {% if project.image %}
+                    <div class="pc-media">
+                        <a href="{{ project.get_absolute_url }}" aria-label="View {{ project.title }}">
+                            <img src="{{ project.image.url }}" alt="{{ project.title }} thumbnail" loading="lazy" decoding="async" fetchpriority="low" width="{{ project.image.width }}" height="{{ project.image.height }}" sizes="(max-width: 880px) 100vw, 300px">
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         {% empty %}
