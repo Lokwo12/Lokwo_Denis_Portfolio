@@ -27,12 +27,12 @@
     <div class="gallery-grid" style="margin-top:14px">
         {% for it in items %}
         <article class="gallery-item">
-            <a href="{{ it.img }}" data-link="{{ it.url }}" data-desc="{{ it.desc|default:'' }}" aria-label="Open {{ it.title }}">
+            <a href="{{ it.img }}" data-link="{{ it.url }}" data-desc="{{ it.desc|default:'' }}" aria-label="Open {{ it.title }}" title="{{ it.title }}{% if it.desc %} — {{ it.desc|striptags|truncatewords:20 }}{% endif %}">
                 <img src="{{ it.img }}" alt="{{ it.alt|default:it.title }}" loading="lazy" decoding="async" fetchpriority="low" width="{{ it.width }}" height="{{ it.height }}" sizes="(max-width: 640px) 100vw, (max-width: 900px) 50vw, (max-width: 1200px) 33vw, 25vw">
                 <span class="g-badge">{{ it.source }}</span>
             </a>
             {% if it.desc %}
-            <div class="g-caption">{{ it.desc|striptags|truncatewords:16 }}</div>
+            <div class="g-caption">{{ it.desc|striptags }}</div>
             {% endif %}
         </article>
         {% empty %}

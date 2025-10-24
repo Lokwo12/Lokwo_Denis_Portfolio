@@ -1,7 +1,7 @@
 {% extends "admin/base.html" %}
 {% load static %}
 
-{% block title %}Portfolio Admin{% endblock %}
+{% block title %}{{ site_title|default:_('Django site admin') }}{% endblock %}
 
 {% block extrastyle %}
   {{ block.super }}
@@ -9,24 +9,9 @@
 {% endblock %}
 
 {% block branding %}
-  <h1 id="site-name"><a href="{% url 'admin:index' %}">Portfolio Admin</a></h1>
+  <h1 id="site-name"><a href="{% url 'admin:index' %}">
+    {% if SITE and SITE.brand_name %}{{ SITE.brand_name }} Admin{% else %}Portfolio Admin{% endif %}
+  </a></h1>
 {% endblock %}
 
-{% block nav-global %}{% endblock %}
-{% extends "admin/base.html" %}
-{% load static %}
-{% block title %}{{ site_title|default:_('Django site admin') }}{% endblock %}
-{% block extrastyle %}
-{{ block.super }}
-<link rel="stylesheet" href="{% static 'css/admin.css' %}">
-{% endblock %}
-{% block extrahead %}
-{{ block.super }}
-<script src="{% static 'js/admin.js' %}"></script>
-{% endblock %}
-{% block branding %}
-<h1 id="site-name"><a href="{% url 'admin:index' %}">
-  {% if SITE and SITE.brand_name %}{{ SITE.brand_name }} Admin{% else %}Portfolio Admin{% endif %}
-</a></h1>
-{% endblock %}
 {% block nav-global %}{% endblock %}
