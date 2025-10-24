@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.sitemaps.views import sitemap
@@ -24,6 +25,12 @@ from django.views.decorators.cache import cache_page
 from portfolio.sitemaps import StaticViewSitemap, PostSitemap, ProjectSitemap, BlogCategorySitemap, BlogTagSitemap
 
 urlpatterns = [
+    # Admin password reset (forgot password)
+    path('admin/password_reset/', auth_views.PasswordResetView.as_view(template_name='admin/password_reset_form.html'), name='admin_password_reset'),
+    path('admin/password_reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='admin/password_reset_done.html'), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='admin/password_reset_confirm.html'), name='password_reset_confirm'),
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(template_name='admin/password_reset_complete.html'), name='password_reset_complete'),
+
     path('admin/', admin.site.urls),
     path('', include('portfolio.urls')),
     path('blog/', include('blog.urls')),

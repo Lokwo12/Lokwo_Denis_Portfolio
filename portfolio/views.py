@@ -5,6 +5,7 @@ from django.core.mail import send_mail, EmailMessage
 from django.contrib import messages
 from django.conf import settings
 from django.utils import timezone
+from datetime import datetime, date, time as dtime
 from blog.models import Post
 from .models import Message, Project, Testimonial, Tag, GalleryItem
 from django.db import models
@@ -409,11 +410,30 @@ def gallery(request):
 				'source': g.source_label(),
 				'date': getattr(g, 'created_at', None),
 			})
-	# Sort by date desc where available
-	items.sort(key=lambda x: x.get('date') or 0, reverse=True)
+	# Sort by date desc where available, normalizing to aware datetimes to avoid
+	# TypeError when mixing datetime.date and datetime.datetime values.
+	def _sort_key(x):
+		d = x.get('date')
+		if d is None:
+			# Items without dates sort last when reverse=True; use numeric sentinel to avoid cross-type comparison
+			return (0, 0)
+		if isinstance(d, datetime):
+			# Ensure aware
+			if timezone.is_naive(d):
+				d = timezone.make_aware(d, timezone.get_current_timezone())
+			return (1, d)
+		if isinstance(d, date):
+			# Promote date to start-of-day aware datetime
+			dt = datetime.combine(d, dtime.min)
+			dt = timezone.make_aware(dt, timezone.get_current_timezone())
+			return (1, dt)
+		# Fallback: treat as no-date
+		return (0, 0)
+
+	items.sort(key=_sort_key, reverse=True)
 
 	# Paginate
-	paginator = Paginator(items, 12)
+	paginator = Paginator(items, 8)
 	page_number = request.GET.get('page')
 	page_obj = paginator.get_page(page_number)
 	return render(request, 'gallery.html', {

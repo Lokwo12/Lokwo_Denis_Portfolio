@@ -1,11 +1,7 @@
-{% extends "admin/login.html" %}
+{% extends "admin/base_site.html" %}
 {% load static %}
-{% block extrastyle %}
-{{ block.super }}
-<link rel="stylesheet" href="{% static 'css/admin.css' %}">
-{% endblock %}
-{% block branding %}
-<h1 id="site-name"><a href="{% url 'admin:index' %}">
-  {% if SITE and SITE.brand_name %}{{ SITE.brand_name }} Admin{% else %}Portfolio Admin{% endif %}
-</a></h1>
+
+{% block content %}
+  {{ block.super }}
+  <p class="password-reset-link"><a href="{% url 'admin_password_reset' %}">Forgot password?</a></p>
 {% endblock %}
