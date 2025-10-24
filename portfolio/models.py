@@ -58,14 +58,16 @@ class Project(models.Model):
 class Testimonial(models.Model):
     name = models.CharField(max_length=100)
     role = models.CharField(max_length=100, blank=True)
+    email = models.EmailField(blank=True)
     content = models.TextField()
     image = models.ImageField(upload_to='testimonials/', blank=True, null=True)
     key = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, null=True)
     created_at = models.DateField(auto_now_add=True)
     featured = models.BooleanField(default=False)
+    order = models.PositiveIntegerField(default=0, help_text="Lower numbers appear first on listings")
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['order', '-created_at', 'id']
 
     def __str__(self):
         return f"{self.name} ({self.role})"
@@ -268,6 +270,7 @@ class SiteSettings(models.Model):
     logo = models.ImageField(upload_to='site/', blank=True, null=True, help_text="Default logo (used if variants not set)")
     logo_light = models.ImageField(upload_to='site/', blank=True, null=True, help_text="Logo for light theme (optional)")
     logo_dark = models.ImageField(upload_to='site/', blank=True, null=True, help_text="Logo for dark theme (optional)")
+    primary_color = models.CharField(max_length=9, blank=True, help_text="Primary brand color (e.g. #111111 or #0F172A)")
     favicon = models.ImageField(upload_to='site/', blank=True, null=True, help_text="Favicon (PNG/SVG) shown in browser tab")
     default_og_image = models.ImageField(upload_to='site/', blank=True, null=True, help_text="Default OpenGraph/Twitter image")
     hero_heading = models.CharField(max_length=200, blank=True)
@@ -291,6 +294,9 @@ class SiteSettings(models.Model):
     active_profile = models.ForeignKey('Profile', on_delete=models.SET_NULL, null=True, blank=True, related_name='site_settings', help_text="Select the Profile to use for homepage avatar and global profile data.")
     # Optional override: homepage avatar image directly from Site Settings
     home_avatar = models.ImageField(upload_to='site/', blank=True, null=True, help_text="Override homepage avatar; if set, used instead of Profile.avatar")
+    # Testimonials section controls
+    show_testimonials_home = models.BooleanField(default=True, help_text="Show the 'What clients say' section on the homepage")
+    testimonials_home_limit = models.PositiveSmallIntegerField(default=6, help_text="Max number of testimonials to show on the homepage")
 
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -343,3 +349,17 @@ class GalleryItem(models.Model):
         if self.post_id and hasattr(self.post, 'get_absolute_url'):
             return self.post.get_absolute_url()
         return self.external_url or ''
+
+
+class Subscription(models.Model):
+    """Simple newsletter/update subscription list."""
+    email = models.EmailField(unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    active = models.BooleanField(default=True)
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, null=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.email} ({'active' if self.active else 'inactive'})"

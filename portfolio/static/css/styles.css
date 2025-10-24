@@ -50,6 +50,16 @@ body{
 	-moz-osx-font-smoothing:grayscale;
     transition: background 0.35s, color 0.25s;
 }
+
+/* Minimal, consistent reveal effect applied across sections/cards via JS */
+.reveal{opacity:0;transform:translateY(12px);transition:opacity .6s ease, transform .6s ease}
+.reveal.in-view{opacity:1;transform:none}
+@media (prefers-reduced-motion: reduce){
+    .reveal{opacity:1;transform:none;transition:none}
+}
+@media print{
+    .reveal{opacity:1 !important;transform:none !important}
+}
 /* Make images responsive by default */
 img{max-width:100%;height:auto;display:block}
 /* Scroll progress bar */

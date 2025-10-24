@@ -277,4 +277,35 @@ document.addEventListener('DOMContentLoaded', function(){
 			trackEvent('case_study_view', { path: window.location.pathname, project: title, slug });
 		}
 	})();
+
+	// Minimal reveal-on-scroll effect applied to common sections/cards across pages
+	(function(){
+		if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+			return; // respect reduced motion
+		}
+		const targets = Array.from(document.querySelectorAll(
+			[
+				'section.container',
+				'.project-card',
+				'.blog-post',
+				'.resume-card',
+				'.contact-card',
+				'.tech-tile',
+				'.stat',
+				'.gallery-item'
+			].join(',')
+		));
+		if(!targets.length) return;
+		targets.forEach(el => el.classList.add('reveal'));
+		const io = new IntersectionObserver((entries)=>{
+			entries.forEach(e => {
+				if(e.isIntersecting){
+					e.target.classList.add('in-view');
+					// Once revealed, unobserve to keep it minimal
+					io.unobserve(e.target);
+				}
+			});
+		}, { threshold: 0.15 });
+		targets.forEach(el => io.observe(el));
+	})();
 });

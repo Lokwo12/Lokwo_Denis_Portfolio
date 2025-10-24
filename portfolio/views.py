@@ -7,15 +7,16 @@ from django.conf import settings
 from django.utils import timezone
 from datetime import datetime, date, time as dtime
 from blog.models import Post
-from .models import Message, Project, Testimonial, Tag, GalleryItem
+from .models import Message, Project, Testimonial, Tag, GalleryItem, Subscription
 from django.db import models
 from django.db.models import Count
-from .forms import ContactForm
+from .forms import ContactForm, SubscribeForm, TestimonialForm
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.views.decorators.cache import cache_page
 from django.utils.text import slugify
+from django.apps import apps
 
 
 # Shorter cache for homepage while developing; keep 5 minutes in production
@@ -32,7 +33,19 @@ def home(request):
 		projects = featured_list + extras
 	else:
 		projects = featured_list
-	testimonials = Testimonial.objects.filter(featured=True)[:3]
+	# Site settings control for testimonials visibility and limit
+	try:
+		SiteSettings = apps.get_model('portfolio', 'SiteSettings')
+		ss = SiteSettings.objects.first()
+		show_t = True if (not ss or getattr(ss, 'show_testimonials_home', True)) else False
+		limit_t = (getattr(ss, 'testimonials_home_limit', 6) or 6)
+	except Exception:
+		show_t = True
+		limit_t = 6
+	if show_t:
+		testimonials = Testimonial.objects.filter(featured=True).order_by('order','-created_at','id')[:limit_t]
+	else:
+		testimonials = []
 	form = ContactForm()
 	# Stats
 	from django.utils import timezone as _tz
@@ -49,6 +62,7 @@ def home(request):
 		'posts': posts,
 		'projects': projects,
 		'testimonials': testimonials,
+		'testimonials_enabled': show_t,
 		'form': form,
 		'stats': {
 			'years': years,
@@ -58,6 +72,25 @@ def home(request):
 		'top_tags': top_tags,
 		'featured_post': featured_post,
 		'featured_project': featured_project,
+	})
+
+
+@cache_page(60 * 10)
+def testimonials(request):
+	"""Public testimonials listing page with simple pagination; shows featured testimonials."""
+	qs = Testimonial.objects.filter(featured=True).order_by('order','-created_at','id')
+	paginator = Paginator(qs, 12)
+	page = request.GET.get('page') or 1
+	try:
+		page_obj = paginator.page(page)
+	except PageNotAnInteger:
+		page_obj = paginator.page(1)
+	except EmptyPage:
+		page_obj = paginator.page(paginator.num_pages)
+	return render(request, 'testimonials.html', {
+		'testimonials': page_obj.object_list,
+		'page_obj': page_obj,
+		'paginator': paginator,
 	})
 
 
@@ -83,8 +116,14 @@ def about_pdf(request):
 		stylesheets = []
 		try:
 			from django.conf import settings as _settings
-			css_path = _settings.BASE_DIR / 'portfolio' / 'static' / 'css' / 'styles.css'
-			stylesheets = [weasyprint.CSS(filename=str(css_path))]
+			css_dir = _settings.BASE_DIR / 'portfolio' / 'static' / 'css'
+			style_files = []
+			# Prefer site styles then print overrides
+			for name in ('styles.css', 'print.css'):
+				path = css_dir / name
+				if path.exists():
+					style_files.append(weasyprint.CSS(filename=str(path)))
+			stylesheets = style_files
 		except Exception:
 			stylesheets = []
 
@@ -171,9 +210,215 @@ def terms(request):
 	return render(request, 'terms.html')
 
 
+def subscribe(request):
+	"""Subscription with double opt-in: collect email, send confirmation link, activate on confirm."""
+	if request.method == 'POST':
+		form = SubscribeForm(request.POST)
+		if form.is_valid():
+			email = form.cleaned_data['email']
+			next_url = request.POST.get('next') or None
+			sub, created = Subscription.objects.get_or_create(email=email, defaults={'active': False})
+			if sub.active:
+				messages.info(request, "You're already subscribed.")
+				return redirect(next_url or 'portfolio:subscribe')
+			# Ensure token exists
+			if not sub.token:
+				import uuid as _uuid
+				sub.token = _uuid.uuid4()
+			# Keep inactive until confirmed (created with active=False above)
+			sub.save()
+
+			# Send confirmation email
+			try:
+				confirm_url = request.build_absolute_uri(reverse('portfolio:subscribe_confirm', kwargs={'token': str(sub.token)}))
+				site_name = getattr(settings, 'SITE_NAME', 'Portfolio')
+				# Branding from SiteSettings (logo, brand name)
+				brand_name = site_name
+				logo_url = None
+				primary_color = '#111'
+				try:
+					SiteSettings = apps.get_model('portfolio', 'SiteSettings')
+					ss = SiteSettings.objects.first()
+					if ss:
+						if getattr(ss, 'brand_name', None):
+							brand_name = ss.brand_name
+						img = getattr(ss, 'logo_light', None) or getattr(ss, 'logo', None)
+						if img and getattr(img, 'url', None):
+							logo_url = request.build_absolute_uri(img.url)
+						pc = getattr(ss, 'primary_color', '') or ''
+						if isinstance(pc, str) and pc.strip():
+							primary_color = pc.strip()
+				except Exception:
+					pass
+				subject = f"Confirm your subscription to {site_name}"
+				from_addr = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
+				to = [email]
+				# Render simple text + HTML
+				ctx = {
+					'site_name': site_name,
+					'brand_name': brand_name,
+					'logo_url': logo_url,
+					'confirm_url': confirm_url,
+					'primary_color': primary_color,
+				}
+				try:
+					text_body = render_to_string('emails/subscribe_confirm.txt', ctx)
+					html_body = render_to_string('emails/subscribe_confirm.html', ctx)
+				except Exception:
+					text_body = (
+						f"Hi,\n\nPlease confirm your subscription by clicking the link below:\n{confirm_url}\n\n"
+						f"If you didn't request this, you can ignore this email.\n"
+					)
+					html_body = None
+				send_mail(subject, text_body, from_addr, to, fail_silently=not settings.DEBUG, html_message=html_body)
+			except Exception:
+				# Don't block on email errors; allow manual confirmation if needed later
+				pass
+
+			messages.success(request, "Thanks! Please check your email to confirm your subscription.")
+			return redirect(next_url or 'portfolio:subscribe')
+	else:
+		form = SubscribeForm()
+	return render(request, 'subscribe.html', {'form': form})
+
+
+def subscribe_confirm(request, token: str):
+	"""Confirm a subscription using its token and activate it."""
+	sub = Subscription.objects.filter(token=token).first()
+	next_url = request.GET.get('next') or reverse('portfolio:home')
+	if not sub:
+		messages.error(request, "Invalid or expired confirmation link.")
+		return redirect(next_url)
+	# Activate and rotate token to prevent reuse
+	sub.active = True
+	try:
+		import uuid as _uuid
+		sub.token = _uuid.uuid4()
+	except Exception:
+		pass
+	sub.save()
+
+	# Optional: send welcome email with unsubscribe link
+	try:
+		unsubscribe_url = request.build_absolute_uri(reverse('portfolio:unsubscribe', kwargs={'token': str(sub.token)}))
+		site_name = getattr(settings, 'SITE_NAME', 'Portfolio')
+		# Branding from SiteSettings (logo, brand name)
+		brand_name = site_name
+		logo_url = None
+		primary_color = '#111'
+		try:
+			SiteSettings = apps.get_model('portfolio', 'SiteSettings')
+			ss = SiteSettings.objects.first()
+			if ss:
+				if getattr(ss, 'brand_name', None):
+					brand_name = ss.brand_name
+				img = getattr(ss, 'logo_light', None) or getattr(ss, 'logo', None)
+				if img and getattr(img, 'url', None):
+					logo_url = request.build_absolute_uri(img.url)
+				pc = getattr(ss, 'primary_color', '') or ''
+				if isinstance(pc, str) and pc.strip():
+					primary_color = pc.strip()
+		except Exception:
+			pass
+		subject = f"Welcome to {site_name}"
+		from_addr = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
+		to = [sub.email]
+		ctx = {
+			'site_name': site_name,
+			'brand_name': brand_name,
+			'logo_url': logo_url,
+			'primary_color': primary_color,
+			'unsubscribe_url': unsubscribe_url,
+		}
+		try:
+			text_body = render_to_string('emails/subscribe_welcome.txt', ctx)
+			html_body = render_to_string('emails/subscribe_welcome.html', ctx)
+		except Exception:
+			text_body = (
+				"Thanks for confirming your subscription!\n\n"
+				f"You can unsubscribe anytime: {unsubscribe_url}\n"
+			)
+			html_body = None
+		send_mail(subject, text_body, from_addr, to, fail_silently=not settings.DEBUG, html_message=html_body)
+	except Exception:
+		pass
+
+	messages.success(request, "You're all set — subscription confirmed!")
+	return redirect(next_url)
+
+
+def unsubscribe(request, token: str):
+	"""Unsubscribe using token link."""
+	sub = Subscription.objects.filter(token=token).first()
+	next_url = request.GET.get('next') or reverse('portfolio:home')
+	if not sub:
+		messages.error(request, "Invalid or expired unsubscribe link.")
+		return redirect(next_url)
+	sub.active = False
+	try:
+		import uuid as _uuid
+		sub.token = _uuid.uuid4()
+	except Exception:
+		pass
+	sub.save()
+	messages.success(request, "You've been unsubscribed. We're sorry to see you go.")
+	return redirect(next_url)
+
+
+def recommend(request):
+	"""Public form to submit a testimonial; saved for moderation (not featured by default). Sends an email notification."""
+	if request.method == 'POST':
+		form = TestimonialForm(request.POST, request.FILES)
+		if form.is_valid():
+			t = form.save(commit=False)
+			t.featured = False
+			t.save()
+
+			# Notify site owner/admin
+			try:
+				admin_email = getattr(settings, 'CONTACT_EMAIL', None) or getattr(settings, 'DEFAULT_FROM_EMAIL', None)
+				if admin_email:
+					subject = f"New recommendation from {t.name}"
+					admin_url = None
+					try:
+						admin_url = request.build_absolute_uri(reverse('admin:portfolio_testimonial_change', args=[t.pk]))
+					except Exception:
+						admin_url = None
+					body = (
+						f"A new recommendation was submitted.\n\n"
+						f"Name: {t.name}\n"
+						f"Role: {t.role}\n\n"
+						f"Content:\n{t.content}\n\n"
+						+ (f"Review in admin: {admin_url}\n" if admin_url else "")
+					)
+					send_mail(subject, body, getattr(settings, 'DEFAULT_FROM_EMAIL', None), [admin_email], fail_silently=True)
+			except Exception:
+				pass
+
+			# Send acknowledgment to user if email provided
+			try:
+				if getattr(t, 'email', ''):
+					subject = "Thanks for your recommendation"
+					body = (
+						"Hi,\n\n"
+						"Thanks for sharing your feedback! Your recommendation was received and is pending review.\n\n"
+						"Best regards,\nDenis"
+					)
+					send_mail(subject, body, getattr(settings, 'DEFAULT_FROM_EMAIL', None), [t.email], fail_silently=True)
+			except Exception:
+				pass
+
+			messages.success(request, 'Thank you! Your recommendation was received and is pending review.')
+			next_url = request.POST.get('next') or None
+			return redirect(next_url or 'portfolio:recommend')
+	else:
+		form = TestimonialForm()
+	return render(request, 'recommend.html', {'form': form})
+
+
 @cache_page(60 * 10)
 def project_list(request):
-	projects = Project.objects.all()
+	projects = Project.objects.all().prefetch_related('tags')
 	tech = request.GET.get('tech')
 	category = request.GET.get('category')
 	search = request.GET.get('search')
@@ -397,7 +642,7 @@ def gallery(request):
 			})
 	# Admin-managed custom Gallery items
 	if src in ('all', 'custom'):
-		gqs = GalleryItem.objects.filter(is_published=True).order_by('order', '-created_at')
+		gqs = GalleryItem.objects.filter(is_published=True).select_related('project','post').order_by('order', '-created_at')
 		for g in gqs:
 			items.append({
 				'title': g.title,
@@ -433,7 +678,11 @@ def gallery(request):
 	items.sort(key=_sort_key, reverse=True)
 
 	# Paginate
+<<<<<<< HEAD
 	paginator = Paginator(items, 8)
+=======
+	paginator = Paginator(items, 6)
+>>>>>>> b34970abf67b9522902e1aff8c1046ad4870f100
 	page_number = request.GET.get('page')
 	page_obj = paginator.get_page(page_number)
 	return render(request, 'gallery.html', {
