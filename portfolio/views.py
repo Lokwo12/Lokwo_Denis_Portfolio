@@ -678,7 +678,15 @@ def gallery(request):
 	items.sort(key=_sort_key, reverse=True)
 
 	# Paginate
+<<<<<<< HEAD
+<<<<<<< HEAD
 	paginator = Paginator(items, 8)
+=======
+	paginator = Paginator(items, 6)
+>>>>>>> b34970abf67b9522902e1aff8c1046ad4870f100
+=======
+	paginator = Paginator(items, 8)
+>>>>>>> 28a634a793a1f685086431c8cec6c79f00d6e9f4
 	page_number = request.GET.get('page')
 	page_obj = paginator.get_page(page_number)
 	return render(request, 'gallery.html', {
