@@ -86,6 +86,39 @@
       </section>
       {% endif %}
 
+      {# Social links card #}
+      {% with links=PROFILE.links %}
+      {% with li=links|get:'linkedin'|default:SITE.linkedin_url gh=links|get:'github'|default:SITE.github_url tw=links|get:'twitter'|default:SITE.twitter_url yt=links|get:'youtube'|default:SITE.youtube_url %}
+      {% if li or gh or tw or yt %}
+      <section class="resume-card">
+        <h3 class="resume-section-title">Social</h3>
+        <div class="badge-list">
+          {% if gh %}
+            <a class="chip" href="{{ gh }}" target="_blank" rel="noopener nofollow" aria-label="GitHub">
+              {% tech_icon 'GitHub' 16 %} GitHub
+            </a>
+          {% endif %}
+          {% if li %}
+            <a class="chip" href="{{ li }}" target="_blank" rel="noopener nofollow" aria-label="LinkedIn">
+              {% tech_icon 'LinkedIn' 16 %} LinkedIn
+            </a>
+          {% endif %}
+          {% if tw %}
+            <a class="chip" href="{{ tw }}" target="_blank" rel="noopener nofollow" aria-label="Twitter">
+              {% tech_icon 'Twitter' 16 %} Twitter
+            </a>
+          {% endif %}
+          {% if yt %}
+            <a class="chip" href="{{ yt }}" target="_blank" rel="noopener nofollow" aria-label="YouTube">
+              {% tech_icon 'YouTube' 16 %} YouTube
+            </a>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
+      {% endwith %}
+      {% endwith %}
+
       {% if PROFILE.tools %}
       <section class="resume-card">
         <h3 class="resume-section-title">Tools & Tech</h3>
