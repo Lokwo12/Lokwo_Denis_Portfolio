@@ -41,8 +41,61 @@ input, select, textarea{ background: transparent; color: var(--text); border:1px
 #breadcrumbs{ background: transparent; color: var(--muted); border-bottom: 1px solid var(--border); }
 #breadcrumbs a{ color: #c7d2fe; }
 
-/* Login */
-#container.login #content{ background: var(--card); border:1px solid var(--border); border-radius:12px; }
+/* Login: center, enlarge, and beautify */
+#container.login{
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  position: relative;
+}
+
+/* Subtle decorative glow */
+#container.login::before{
+  content: "";
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(800px 600px at 15% 10%, rgba(99,102,241,0.18), transparent 60%),
+    radial-gradient(600px 500px at 85% 80%, rgba(96,165,250,0.16), transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+
+#container.login #content{
+  width: min(520px, 92vw);
+  background: var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  box-shadow: 0 20px 60px rgba(2,6,23,0.45);
+  padding: 24px 22px 18px;
+  z-index: 1;
+}
+
+#container.login #content h1{
+  text-align:center;
+  margin: 0 0 12px;
+  color: var(--text);
+}
+
+#container.login .form-row label{ font-weight: 600; color: var(--text); }
+#container.login input{ padding: 12px 12px; font-size: 16px; border-radius: 10px; }
+#container.login .password-reset-link{ text-align:center; margin-top: 8px; }
+
+#container.login .submit-row{ display:flex; justify-content:center; margin-top: 10px; }
+#container.login .submit-row input{
+  padding: 12px 16px; font-size: 16px; border-radius: 10px;
+  background: var(--accent); color: #fff; border: 1px solid transparent;
+  box-shadow: 0 8px 24px rgba(79,70,229,0.35);
+}
+#container.login .submit-row input:hover{ filter: brightness(1.05); }
+
+/* Light theme adjustments */
+@media (prefers-color-scheme: light){
+  #container.login::before{
+    background:
+      radial-gradient(800px 600px at 15% 10%, rgba(99,102,241,0.22), transparent 60%),
+      radial-gradient(600px 500px at 85% 80%, rgba(125,211,252,0.18), transparent 60%);
+  }
+}
 
 /* Make it work for light theme too */
 @media (prefers-color-scheme: light){
