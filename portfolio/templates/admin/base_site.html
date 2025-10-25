@@ -1,11 +1,16 @@
 {% extends "admin/base.html" %}
 {% load static %}
 
-{% block title %}{{ site_title|default:_('Django site admin') }}{% endblock %}
+{% block title %}{% if SITE and SITE.brand_name %}{{ SITE.brand_name }} Admin{% else %}{{ site_title|default:_('Django site admin') }}{% endif %}{% endblock %}
 
 {% block extrastyle %}
   {{ block.super }}
   <link rel="stylesheet" type="text/css" href="{% static 'admin/custom.css' %}">
+  {% if SITE and SITE.primary_color %}
+  <style>
+    :root{ --accent: {{ SITE.primary_color }}; }
+  </style>
+  {% endif %}
 {% endblock %}
 
 {% block branding %}

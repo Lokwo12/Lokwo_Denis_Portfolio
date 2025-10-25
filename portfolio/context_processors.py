@@ -370,6 +370,7 @@ def site_settings(request):
             'calendly_url': obj.calendly_url or None,
             'analytics_measurement_id': obj.analytics_measurement_id or getattr(settings, 'GA_MEASUREMENT_ID', None),
             'consent_required': obj.consent_required,
+            'primary_color': getattr(obj, 'primary_color', None) or None,
         }
     else:
         data = {
@@ -397,5 +398,6 @@ def site_settings(request):
             'calendly_url': None,
             'analytics_measurement_id': getattr(settings, 'GA_MEASUREMENT_ID', None),
             'consent_required': True,
+            'primary_color': None,
         }
     return {'SITE': data}
