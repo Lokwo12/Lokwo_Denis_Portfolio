@@ -83,14 +83,15 @@ img{max-width:100%;height:auto;display:block}
 [data-theme="light"] .brand-logo-light{display:block}
 .site-nav a{color:var(--muted);text-decoration:none;margin-left:20px;position:relative;padding:6px 10px;border-radius:10px;border:1px solid transparent;transition:color .2s, background .25s, border-color .25s, box-shadow .25s, transform .18s}
 /* Hover: subtle glass bg, accent border, soft lift */
-.site-nav a:hover{color:var(--link);background:var(--glass);border-color:var(--accent);box-shadow:0 6px 22px rgba(79,70,229,0.25);transform:translateY(-1px)}
+.site-nav a:hover{color:var(--link);background:var(--glass);background:color-mix(in srgb, var(--accent) 12%, transparent);border-color:var(--accent);box-shadow:0 6px 22px rgba(79,70,229,0.25);transform:translateY(-1px)}
 /* Pressed state */
 .site-nav a:active{transform:translateY(0);box-shadow:0 3px 12px rgba(79,70,229,0.18)}
 /* Hover underline animation (active keeps its own underline) */
-.site-nav a::before{content:"";position:absolute;left:10px;right:10px;bottom:-6px;height:2px;background:var(--accent);border-radius:2px;transform:scaleX(0);transform-origin:left center;transition:transform .2s ease}
+.site-nav a::before{content:"";position:absolute;left:10px;right:10px;bottom:-2px;height:2px;background:var(--accent);border-radius:2px;transform:scaleX(0);transform-origin:left center;transition:transform .2s ease}
 .site-nav a:hover::before{transform:scaleX(1)}
+.site-nav a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-color:var(--accent);background:var(--glass)}
 .site-nav a.active{color:var(--accent)}
-.site-nav a.active::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:2px;background:var(--accent);border-radius:2px}
+.site-nav a.active::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:2px;background:var(--accent);border-radius:2px}
 .nav-toggle{display:none;background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:8px 10px;border-radius:8px}
 
 /* Focus states */
@@ -511,6 +512,12 @@ input[type="text"],input[type="email"],textarea{border-radius:8px;padding:10px;b
     .site-nav a{transition:none}
     .site-nav a:hover{transform:none;box-shadow:none}
     .site-nav a::before{transition:none}
+}
+
+/* Keep hover effects minimal on touch/coarse pointers */
+@media (hover: none), (pointer: coarse){
+    .site-nav a:hover{background:transparent;border-color:transparent;box-shadow:none;transform:none}
+    .site-nav a:hover::before{transform:none}
 }
 
 /* Optional brand variants (set on <html data-brand="teal">) */
