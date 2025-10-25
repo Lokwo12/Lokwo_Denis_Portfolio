@@ -18,6 +18,13 @@ from urllib.parse import urlparse
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load environment variables from .env (optional)
+try:
+    from dotenv import load_dotenv
+    load_dotenv(BASE_DIR / '.env')
+except Exception:
+    pass
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -146,7 +153,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Development email backend: prints emails to the console
+# Development email backend: prints emails to the console by default
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@example.com')
 CONTACT_EMAIL = os.environ.get('CONTACT_EMAIL', os.environ.get('DEFAULT_FROM_EMAIL', 'you@example.com'))
@@ -157,6 +164,14 @@ EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587)) if os.environ.get('EMAIL_POR
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+
+# Auto-switch to SMTP if EMAIL_HOST is provided and EMAIL_BACKEND not explicitly set
+if not os.environ.get('EMAIL_BACKEND') and EMAIL_HOST:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# Use EMAIL_HOST_USER as DEFAULT_FROM_EMAIL if a placeholder value is still set
+if DEFAULT_FROM_EMAIL == 'no-reply@example.com' and EMAIL_HOST_USER:
+    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Simple cache for rate-limiting middleware; local-memory by default
 CACHES = {

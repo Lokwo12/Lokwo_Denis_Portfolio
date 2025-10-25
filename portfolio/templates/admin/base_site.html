@@ -14,9 +14,17 @@
 {% endblock %}
 
 {% block branding %}
-  <h1 id="site-name"><a href="{% url 'admin:index' %}">
-    {% if SITE and SITE.brand_name %}{{ SITE.brand_name }} Admin{% else %}Portfolio Admin{% endif %}
-  </a></h1>
+  <h1 id="site-name">
+    <a href="{% url 'admin:index' %}">
+      {% if SITE.logo_light_url or SITE.logo_dark_url %}
+        {% if SITE.logo_light_url %}<img class="site-logo logo-light" alt="Logo" src="{{ SITE.logo_light_url }}" />{% endif %}
+        {% if SITE.logo_dark_url %}<img class="site-logo logo-dark" alt="Logo" src="{{ SITE.logo_dark_url }}" />{% endif %}
+      {% elif SITE.logo_url %}
+        <img class="site-logo" alt="Logo" src="{{ SITE.logo_url }}" />
+      {% endif %}
+      {% if SITE and SITE.brand_name %}{{ SITE.brand_name }} Admin{% else %}Portfolio Admin{% endif %}
+    </a>
+  </h1>
 {% endblock %}
 
 {% block nav-global %}{% endblock %}

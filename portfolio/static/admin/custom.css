@@ -17,6 +17,15 @@ body.dark{ background: var(--bg) !important; color: var(--text) !important; }
 #user-tools{ color: rgba(255,255,255,0.9); }
 #user-tools a{ color:#fff; opacity:0.95 }
 
+/* Branding with logo */
+#branding h1{ display:flex; align-items:center; gap:10px; }
+#branding h1 img.site-logo{ height:26px; width:auto; vertical-align:middle; }
+#branding h1 img.logo-dark{ display:none; }
+@media (prefers-color-scheme: dark){
+  #branding h1 img.logo-light{ display:none; }
+  #branding h1 img.logo-dark{ display:inline-block; }
+}
+
 /* Modules/cards */
 .module{ background: var(--card); border:1px solid var(--border); border-radius:12px; box-shadow: 0 4px 18px rgba(2,6,23,0.35); }
 .dashboard .module{ padding: 10px 12px; }
